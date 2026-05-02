@@ -1,0 +1,371 @@
+import { useState, useEffect } from 'react';
+import { disputeService } from '../../services/api';
+import { 
+  MessageSquare, Search, Plus, Filter, Calendar, AlertCircle, 
+  CheckCircle2, Clock, XCircle, Eye, TrendingUp
+} from 'lucide-react';
+
+interface Dispute {
+  id: number;
+  transaction_id: number;
+  reason: string;
+  status: 'open' | 'in_progress' | 'resolved' | 'escalated';
+  created_at: string;
+  resolution?: string;
+  transaction?: {
+    description: string;
+    amount: number;
+  };
+}
+
+export default function DisputesPage() {
+  const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [showModal, setShowModal] = useState(false);
+  const [newDispute, setNewDispute] = useState({
+    transaction_id: '',
+    reason: '',
+  });
+
+  useEffect(() => {
+    loadDisputes();
+  }, []);
+
+  const loadDisputes = async () => {
+    try {
+      setLoading(true);
+      const response = await disputeService.getAll();
+      const data = response.data.data || response.data || [];
+      setDisputes(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Erreur chargement litiges:', error);
+      setDisputes([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCreateDispute = async () => {
+    if (!newDispute.transaction_id || !newDispute.reason) {
+      alert('Veuillez remplir tous les champs');
+      return;
+    }
+
+    try {
+      await disputeService.create({
+        transaction_id: parseInt(newDispute.transaction_id),
+        reason: newDispute.reason,
+      });
+      setShowModal(false);
+      setNewDispute({ transaction_id: '', reason: '' });
+      loadDisputes();
+    } catch (error) {
+      console.error('Erreur création litige:', error);
+      alert('Erreur lors de la création du litige');
+    }
+  };
+
+  const getStatusBadge = (status: string) => {
+    const badges = {
+      open: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Ouvert', icon: AlertCircle },
+      in_progress: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'En cours', icon: Clock },
+      resolved: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Résolu', icon: CheckCircle2 },
+      escalated: { bg: 'bg-red-100', text: 'text-red-700', label: 'Escaladé', icon: TrendingUp },
+    };
+    const badge = badges[status as keyof typeof badges] || badges.open;
+    const Icon = badge.icon;
+    return (
+      <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
+        <Icon className="w-3 h-3" />
+        <span>{badge.label}</span>
+      </span>
+    );
+  };
+
+  const filteredDisputes = disputes.filter(d => {
+    const matchesSearch = d.reason.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const stats = {
+    total: disputes.length,
+    open: disputes.filter(d => d.status === 'open').length,
+    in_progress: disputes.filter(d => d.status === 'in_progress').length,
+    resolved: disputes.filter(d => d.status === 'resolved').length,
+  };
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="relative">
+        <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/10 via-teal-600/10 to-emerald-600/10 rounded-3xl blur-3xl"></div>
+        <div className="relative glass p-8 rounded-3xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-4xl font-display font-bold mb-2 gradient-text">
+                Mes Litiges
+              </h1>
+              <p className="text-slate-600 text-lg flex items-center space-x-2">
+                <MessageSquare className="w-5 h-5 text-emerald-600" />
+                <span><span className="font-semibold text-emerald-600">{stats.total}</span> litiges au total</span>
+              </p>
+            </div>
+            <div className="hidden lg:block">
+              <div className="w-20 h-20 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-3xl flex items-center justify-center shadow-xl">
+                <MessageSquare className="w-10 h-10 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid md:grid-cols-4 gap-6">
+        <div className="stat-card card-glow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+              <MessageSquare className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Total</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.total}</p>
+          </div>
+        </div>
+
+        <div className="stat-card card-glow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center shadow-lg">
+              <AlertCircle className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Ouverts</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.open}</p>
+          </div>
+        </div>
+
+        <div className="stat-card card-glow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Clock className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">En cours</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.in_progress}</p>
+          </div>
+        </div>
+
+        <div className="stat-card card-glow">
+          <div className="flex items-start justify-between mb-4">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-lg">
+              <CheckCircle2 className="w-6 h-6 text-white" />
+            </div>
+          </div>
+          <div className="space-y-1">
+            <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Résolus</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.resolved}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtres et Actions */}
+      <div className="glass p-6 rounded-2xl">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0 md:space-x-4">
+          {/* Recherche */}
+          <div className="relative flex-1">
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <input
+              type="text"
+              placeholder="Rechercher un litige..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-12 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+            />
+          </div>
+
+          {/* Filtre par statut */}
+          <div className="flex items-center space-x-3">
+            <Filter className="w-5 h-5 text-slate-600" />
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+            >
+              <option value="all">Tous les statuts</option>
+              <option value="open">Ouverts</option>
+              <option value="in_progress">En cours</option>
+              <option value="resolved">Résolus</option>
+              <option value="escalated">Escaladés</option>
+            </select>
+          </div>
+
+          {/* Bouton Nouveau Litige */}
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Nouveau Litige</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Liste des litiges */}
+      {loading ? (
+        <div className="glass p-12 rounded-2xl text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-slate-600">Chargement des litiges...</p>
+        </div>
+      ) : filteredDisputes.length === 0 ? (
+        <div className="glass p-12 rounded-2xl text-center">
+          <CheckCircle2 className="w-16 h-16 text-emerald-500 mx-auto mb-4" />
+          <h3 className="text-xl font-bold mb-2">Aucun litige</h3>
+          <p className="text-slate-600 mb-6">Vous n'avez aucun litige en cours</p>
+          <button
+            onClick={() => setShowModal(true)}
+            className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:shadow-xl transition-all duration-300 hover:scale-105 inline-flex items-center space-x-2"
+          >
+            <Plus className="w-5 h-5" />
+            <span>Créer un litige</span>
+          </button>
+        </div>
+      ) : (
+        <div className="grid gap-6">
+          {filteredDisputes.map((dispute) => (
+            <div key={dispute.id} className="glass p-6 rounded-3xl hover:shadow-xl transition-all duration-300 card-hover">
+              <div className="flex items-start justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center space-x-4 mb-4">
+                    <div className="w-14 h-14 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-2xl flex items-center justify-center shadow-lg">
+                      <MessageSquare className="w-7 h-7 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-xl font-bold text-slate-900 mb-1">Litige #{dispute.id}</h3>
+                      <div className="flex items-center space-x-4 text-sm text-slate-600">
+                        <span className="flex items-center space-x-1">
+                          <Calendar className="w-4 h-4" />
+                          <span>{new Date(dispute.created_at).toLocaleDateString('fr-FR')}</span>
+                        </span>
+                        {dispute.transaction && (
+                          <span className="text-xs text-slate-500">
+                            Transaction: {dispute.transaction.description}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div>
+                      {getStatusBadge(dispute.status)}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-slate-50 rounded-xl mb-4">
+                    <div className="text-xs font-semibold text-slate-500 mb-1">Raison du litige</div>
+                    <div className="text-sm text-slate-900">{dispute.reason}</div>
+                  </div>
+
+                  {dispute.resolution && (
+                    <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-xl">
+                      <div className="flex items-start space-x-2">
+                        <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                        <div>
+                          <div className="text-xs font-semibold text-emerald-700 mb-1">Résolution</div>
+                          <div className="text-sm text-emerald-900">{dispute.resolution}</div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="ml-6">
+                  <button className="px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 rounded-xl font-semibold transition-all duration-300 flex items-center space-x-2">
+                    <Eye className="w-5 h-5" />
+                    <span>Détails</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Modal Nouveau Litige */}
+      {showModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
+          <div className="glass-dark max-w-2xl w-full rounded-3xl p-8">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
+                <Plus className="w-6 h-6 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-white">Nouveau Litige</h2>
+            </div>
+
+            <div className="space-y-4 mb-6">
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-2">
+                  ID de la transaction <span className="text-red-400">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={newDispute.transaction_id}
+                  onChange={(e) => setNewDispute({ ...newDispute, transaction_id: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  placeholder="Ex: 1"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-2">
+                  Raison du litige <span className="text-red-400">*</span>
+                </label>
+                <textarea
+                  value={newDispute.reason}
+                  onChange={(e) => setNewDispute({ ...newDispute, reason: e.target.value })}
+                  rows={6}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  placeholder="Décrivez en détail la raison du litige..."
+                />
+              </div>
+
+              <div className="p-4 bg-amber-500/20 border border-amber-400/30 rounded-xl">
+                <div className="flex items-start space-x-2">
+                  <AlertCircle className="w-5 h-5 text-amber-300 flex-shrink-0 mt-0.5" />
+                  <div className="text-white/80 text-sm">
+                    <p className="font-semibold mb-1">Important:</p>
+                    <p className="text-white/60">
+                      Assurez-vous de fournir tous les détails nécessaires pour faciliter la résolution du litige.
+                      Notre équipe examinera votre demande dans les plus brefs délais.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleCreateDispute}
+                className="flex-1 px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"
+              >
+                <Plus className="w-5 h-5" />
+                <span>Créer le litige</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowModal(false);
+                  setNewDispute({ transaction_id: '', reason: '' });
+                }}
+                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
