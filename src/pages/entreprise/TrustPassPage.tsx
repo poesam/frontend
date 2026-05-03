@@ -19,10 +19,14 @@ export default function TrustPassPage() {
   const loadCompanyData = async () => {
     try {
       setLoading(true);
-      // Récupérer les données de l'entreprise connectée
       const response = await companyService.getAll();
-      const data = response.data.data || response.data || [];
+      
+      // L'API retourne une structure paginée : response.data.data.data
+      const data = response.data.data?.data || response.data.data || response.data || [];
+      
+      // Chercher l'entreprise de l'utilisateur connecté
       const myCompany = Array.isArray(data) ? data.find((c: any) => c.user_id === user?.id) : null;
+      
       setCompany(myCompany);
     } catch (error) {
       console.error('Erreur chargement entreprise:', error);
@@ -218,18 +222,18 @@ export default function TrustPassPage() {
 
             <div className="grid md:grid-cols-2 gap-4">
               <div className="p-4 bg-slate-50 rounded-xl">
-                <div className="text-xs text-slate-500 mb-1">Nom de l'entreprise</div>
-                <div className="font-semibold text-slate-900">{company.name}</div>
+                <div className="text-xs text-slate-500 mb-1">Nom commercial</div>
+                <div className="font-semibold text-slate-900">{company.commercial_name}</div>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl">
-                <div className="text-xs text-slate-500 mb-1">Secteur d'activité</div>
-                <div className="font-semibold text-slate-900">{company.sector}</div>
+                <div className="text-xs text-slate-500 mb-1">Type d'activité</div>
+                <div className="font-semibold text-slate-900 capitalize">{company.business_type}</div>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl">
-                <div className="text-xs text-slate-500 mb-1">Email</div>
-                <div className="font-semibold text-slate-900">{company.email}</div>
+                <div className="text-xs text-slate-500 mb-1">Ville</div>
+                <div className="font-semibold text-slate-900">{company.city}</div>
               </div>
 
               <div className="p-4 bg-slate-50 rounded-xl">

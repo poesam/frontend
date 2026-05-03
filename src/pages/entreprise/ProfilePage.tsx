@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { companyService } from '../../services/api';
 import { 
-  Building2, Mail, Phone, MapPin, Globe, Edit2, Save, 
+  Building2, Phone, MapPin, Globe, Edit2, Save, 
   X, TrendingUp, Shield, CheckCircle2, AlertCircle, Sparkles
 } from 'lucide-react';
 
@@ -12,12 +12,17 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    sector: '',
-    email: '',
+    commercial_name: '',
+    legal_name: '',
+    business_type: '',
+    city: '',
     phone: '',
     address: '',
     website: '',
+    whatsapp: '',
+    facebook: '',
+    instagram: '',
+    description: '',
   });
 
   useEffect(() => {
@@ -28,17 +33,26 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       const response = await companyService.getAll();
-      const data = response.data.data || response.data || [];
+      
+      // L'API retourne une structure paginée : response.data.data.data
+      const data = response.data.data?.data || response.data.data || response.data || [];
+      
       const myCompany = Array.isArray(data) ? data.find((c: any) => c.user_id === user?.id) : null;
+      
       setCompany(myCompany);
       if (myCompany) {
         setFormData({
-          name: myCompany.name || '',
-          sector: myCompany.sector || '',
-          email: myCompany.email || '',
+          commercial_name: myCompany.commercial_name || '',
+          legal_name: myCompany.legal_name || '',
+          business_type: myCompany.business_type || '',
+          city: myCompany.city || '',
           phone: myCompany.phone || '',
           address: myCompany.address || '',
           website: myCompany.website || '',
+          whatsapp: myCompany.whatsapp || '',
+          facebook: myCompany.facebook || '',
+          instagram: myCompany.instagram || '',
+          description: myCompany.description || '',
         });
       }
     } catch (error) {
@@ -65,12 +79,17 @@ export default function ProfilePage() {
     setEditing(false);
     if (company) {
       setFormData({
-        name: company.name || '',
-        sector: company.sector || '',
-        email: company.email || '',
+        commercial_name: company.commercial_name || '',
+        legal_name: company.legal_name || '',
+        business_type: company.business_type || '',
+        city: company.city || '',
         phone: company.phone || '',
         address: company.address || '',
         website: company.website || '',
+        whatsapp: company.whatsapp || '',
+        facebook: company.facebook || '',
+        instagram: company.instagram || '',
+        description: company.description || '',
       });
     }
   };
@@ -203,62 +222,111 @@ export default function ProfilePage() {
             </div>
 
             <div className="space-y-6">
-              {/* Nom de l'entreprise */}
+              {/* Nom commercial */}
               <div>
                 <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
                   <Building2 className="w-4 h-4" />
-                  <span>Nom de l'entreprise</span>
+                  <span>Nom commercial</span>
                 </label>
                 {editing ? (
                   <input
                     type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    value={formData.commercial_name}
+                    onChange={(e) => setFormData({ ...formData, commercial_name: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
                   />
                 ) : (
                   <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
-                    {company.name}
+                    {company.commercial_name}
                   </div>
                 )}
               </div>
 
-              {/* Secteur */}
+              {/* Raison sociale */}
+              <div>
+                <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
+                  <Building2 className="w-4 h-4" />
+                  <span>Raison sociale (optionnel)</span>
+                </label>
+                {editing ? (
+                  <input
+                    type="text"
+                    value={formData.legal_name}
+                    onChange={(e) => setFormData({ ...formData, legal_name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                  />
+                ) : (
+                  <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
+                    {company.legal_name || 'Non renseignée'}
+                  </div>
+                )}
+              </div>
+
+              {/* Type d'activité */}
               <div>
                 <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
                   <Sparkles className="w-4 h-4" />
-                  <span>Secteur d'activité</span>
+                  <span>Type d'activité</span>
                 </label>
                 {editing ? (
-                  <input
-                    type="text"
-                    value={formData.sector}
-                    onChange={(e) => setFormData({ ...formData, sector: e.target.value })}
+                  <select
+                    value={formData.business_type}
+                    onChange={(e) => setFormData({ ...formData, business_type: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
-                  />
+                  >
+                    <option value="">Sélectionner</option>
+                    <option value="boutique">Boutique</option>
+                    <option value="livreur">Livreur</option>
+                    <option value="prestataire">Prestataire</option>
+                    <option value="artisan">Artisan</option>
+                    <option value="marketplace">Marketplace</option>
+                    <option value="fintech">Fintech</option>
+                    <option value="autre">Autre</option>
+                  </select>
                 ) : (
-                  <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
-                    {company.sector}
+                  <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900 capitalize">
+                    {company.business_type}
                   </div>
                 )}
               </div>
 
-              {/* Email */}
+              {/* Description */}
               <div>
                 <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
-                  <Mail className="w-4 h-4" />
-                  <span>Email</span>
+                  <Sparkles className="w-4 h-4" />
+                  <span>Description</span>
+                </label>
+                {editing ? (
+                  <textarea
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    rows={3}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                    placeholder="Description de votre activité"
+                  />
+                ) : (
+                  <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
+                    {company.description || 'Non renseignée'}
+                  </div>
+                )}
+              </div>
+
+              {/* Ville */}
+              <div>
+                <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
+                  <MapPin className="w-4 h-4" />
+                  <span>Ville</span>
                 </label>
                 {editing ? (
                   <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    type="text"
+                    value={formData.city}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
                   />
                 ) : (
                   <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
-                    {company.email}
+                    {company.city}
                   </div>
                 )}
               </div>
@@ -275,11 +343,32 @@ export default function ProfilePage() {
                     value={formData.phone}
                     onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                     className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
-                    placeholder="Ex: +225 XX XX XX XX XX"
+                    placeholder="Ex: +221 XX XX XX XX XX"
                   />
                 ) : (
                   <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
                     {company.phone || 'Non renseigné'}
+                  </div>
+                )}
+              </div>
+
+              {/* WhatsApp */}
+              <div>
+                <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
+                  <Phone className="w-4 h-4" />
+                  <span>WhatsApp (optionnel)</span>
+                </label>
+                {editing ? (
+                  <input
+                    type="tel"
+                    value={formData.whatsapp}
+                    onChange={(e) => setFormData({ ...formData, whatsapp: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                    placeholder="Ex: +221 XX XX XX XX XX"
+                  />
+                ) : (
+                  <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
+                    {company.whatsapp || 'Non renseigné'}
                   </div>
                 )}
               </div>
@@ -305,11 +394,53 @@ export default function ProfilePage() {
                 )}
               </div>
 
+              {/* Facebook */}
+              <div>
+                <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
+                  <Globe className="w-4 h-4" />
+                  <span>Facebook (optionnel)</span>
+                </label>
+                {editing ? (
+                  <input
+                    type="text"
+                    value={formData.facebook}
+                    onChange={(e) => setFormData({ ...formData, facebook: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                    placeholder="https://facebook.com/..."
+                  />
+                ) : (
+                  <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
+                    {company.facebook || 'Non renseigné'}
+                  </div>
+                )}
+              </div>
+
+              {/* Instagram */}
+              <div>
+                <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
+                  <Globe className="w-4 h-4" />
+                  <span>Instagram (optionnel)</span>
+                </label>
+                {editing ? (
+                  <input
+                    type="text"
+                    value={formData.instagram}
+                    onChange={(e) => setFormData({ ...formData, instagram: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+                    placeholder="@votre_compte"
+                  />
+                ) : (
+                  <div className="p-4 bg-slate-50 rounded-xl font-semibold text-slate-900">
+                    {company.instagram || 'Non renseigné'}
+                  </div>
+                )}
+              </div>
+
               {/* Site web */}
               <div>
                 <label className="flex items-center space-x-2 text-sm font-semibold text-slate-600 mb-2">
                   <Globe className="w-4 h-4" />
-                  <span>Site web</span>
+                  <span>Site web (optionnel)</span>
                 </label>
                 {editing ? (
                   <input
