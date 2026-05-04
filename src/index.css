@@ -265,3 +265,33 @@
   @apply bg-gradient-to-r from-slate-200 via-slate-300 to-slate-200 animate-pulse;
   background-size: 200% 100%;
 }
+
+/* QR Code styling with rounded corners */
+.qr-code-container {
+  @apply relative w-full h-full;
+}
+
+.qr-code-container img {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Style pour arrondir les coins du QR code SVG */
+.qr-code-container svg {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+/* Animation pour le QR code */
+@keyframes qr-scan {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(59, 130, 246, 0);
+  }
+}
+
+.qr-code-container:hover {
+  animation: qr-scan 2s ease-in-out infinite;
+}

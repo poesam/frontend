@@ -180,7 +180,7 @@ export default function TrustPassPage() {
         </div>
       </div>
 
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-[380px_1fr] gap-6">
         {/* QR Code et Code TrustPass */}
         <div className="lg:col-span-1">
           <div className="glass p-8 rounded-3xl card-hover text-center">
@@ -192,37 +192,65 @@ export default function TrustPassPage() {
             </div>
 
             {/* QR Code */}
-            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl mb-6 shadow-xl overflow-hidden p-6 flex items-center justify-center">
-              {qrCodeData?.url ? (
-                <div className="w-full h-full flex items-center justify-center">
-                  <img 
-                    src={qrCodeData.url} 
-                    alt="QR Code TrustPass" 
-                    className="max-w-full max-h-full object-contain"
-                  />
-                </div>
-              ) : (
-                <div className="text-center">
-                  <QrCode className="w-32 h-32 text-blue-400 mx-auto mb-4" />
-                  <button
-                    onClick={handleGenerateQR}
-                    disabled={generatingQR}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 mx-auto"
-                  >
-                    {generatingQR ? (
-                      <>
-                        <RefreshCw className="w-4 h-4 animate-spin" />
-                        <span>Génération...</span>
-                      </>
-                    ) : (
-                      <>
-                        <QrCode className="w-4 h-4" />
-                        <span>Générer QR Code</span>
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+            <div className="relative w-64 h-64 mx-auto mb-6">
+              {/* Fond avec gradient et ombre */}
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500 via-cyan-500 to-blue-600 rounded-3xl shadow-2xl"></div>
+              
+              {/* Conteneur blanc pour le QR code */}
+              <div className="absolute inset-3 bg-white rounded-2xl flex items-center justify-center p-4">
+                {qrCodeData?.url ? (
+                  <div className="w-full h-full flex items-center justify-center relative">
+                    {/* QR Code avec style arrondi */}
+                    <div className="qr-code-container">
+                      <img 
+                        src={qrCodeData.url} 
+                        alt="QR Code TrustPass" 
+                        className="max-w-full max-h-full object-contain"
+                        style={{
+                          imageRendering: 'pixelated',
+                          filter: 'contrast(1.1)'
+                        }}
+                      />
+                    </div>
+                    
+                    {/* Logo au centre du QR code - décalé légèrement à gauche */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ marginLeft: '-4px' }}>
+                      <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center border-2 border-blue-500">
+                        <QrCode className="w-6 h-6 text-blue-600" />
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="w-32 h-32 bg-gradient-to-br from-blue-100 to-cyan-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                      <QrCode className="w-16 h-16 text-blue-400" />
+                    </div>
+                    <button
+                      onClick={handleGenerateQR}
+                      disabled={generatingQR}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 mx-auto shadow-lg"
+                    >
+                      {generatingQR ? (
+                        <>
+                          <RefreshCw className="w-4 h-4 animate-spin" />
+                          <span>Génération...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Sparkles className="w-4 h-4" />
+                          <span>Générer QR Code</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+              
+              {/* Coins décoratifs */}
+              <div className="absolute -top-2 -left-2 w-8 h-8 border-t-4 border-l-4 border-blue-400 rounded-tl-2xl"></div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 border-t-4 border-r-4 border-cyan-400 rounded-tr-2xl"></div>
+              <div className="absolute -bottom-2 -left-2 w-8 h-8 border-b-4 border-l-4 border-cyan-400 rounded-bl-2xl"></div>
+              <div className="absolute -bottom-2 -right-2 w-8 h-8 border-b-4 border-r-4 border-blue-400 rounded-br-2xl"></div>
             </div>
 
             {/* Code TrustPass */}
@@ -280,7 +308,7 @@ export default function TrustPassPage() {
         </div>
 
         {/* Informations et Statistiques */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="space-y-6">
           {/* Score de Confiance */}
           <div className="glass p-8 rounded-3xl card-hover">
             <div className="flex items-center justify-between mb-6">
