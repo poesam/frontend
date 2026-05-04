@@ -13,6 +13,7 @@ import TransactionsPage from './TransactionsPage';
 import VerificationsPage from './VerificationsPage';
 import DisputesPage from './DisputesPage';
 import ProfilePage from './ProfilePage';
+import ReceiptPage from './ReceiptPage';
 
 // Pages du dashboard entreprise
 function Overview() {
@@ -359,6 +360,7 @@ export default function EntrepriseDashboard() {
             <Route path="company" element={<ProfilePage />} />
             <Route path="trustpass" element={<TrustPassPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
+            <Route path="transactions/:id/receipt" element={<ReceiptPage />} />
             <Route path="verifications" element={<VerificationsPage />} />
             <Route path="disputes" element={<DisputesPage />} />
             <Route path="*" element={<Navigate to="/entreprise/dashboard" replace />} />

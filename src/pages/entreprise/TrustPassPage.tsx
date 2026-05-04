@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { companyService } from '../../services/api';
+import axios from 'axios';
 import { 
   QrCode, Download, Share2, Eye, TrendingUp, Shield, 
-  CheckCircle2, Calendar, Building2, Sparkles, Copy, ExternalLink
+  CheckCircle2, Calendar, Building2, Sparkles, Copy, ExternalLink, RefreshCw
 } from 'lucide-react';
 
 export default function TrustPassPage() {
@@ -11,6 +12,8 @@ export default function TrustPassPage() {
   const [company, setCompany] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [generatingQR, setGeneratingQR] = useState(false);
+  const [qrCodeData, setQrCodeData] = useState<any>(null);
 
   useEffect(() => {
     loadCompanyData();
@@ -28,10 +31,60 @@ export default function TrustPassPage() {
       const myCompany = Array.isArray(data) ? data.find((c: any) => c.user_id === user?.id) : null;
       
       setCompany(myCompany);
+
+      // Charger le QR code s'il existe
+      if (myCompany?.trust_pass?.id) {
+        await loadQRCode(myCompany.trust_pass.id);
+      }
     } catch (error) {
       console.error('Erreur chargement entreprise:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadQRCode = async (trustPassId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(`http://localhost:8000/api/trust-passes/${trustPassId}`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success && response.data.data.qr_code_url) {
+        setQrCodeData({
+          url: response.data.data.qr_code_url,
+          publicUrl: response.data.data.public_url
+        });
+      }
+    } catch (error) {
+      console.error('Erreur chargement QR code:', error);
+    }
+  };
+
+  const handleGenerateQR = async () => {
+    if (!company?.trust_pass?.id) return;
+
+    try {
+      setGeneratingQR(true);
+      const token = localStorage.getItem('token');
+      const response = await axios.post(
+        `http://localhost:8000/api/trust-passes/${company.trust_pass.id}/generate-qr`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setQrCodeData({
+          url: response.data.data.qr_code_url,
+          publicUrl: response.data.data.public_url,
+          svg: response.data.data.qr_code_svg
+        });
+      }
+    } catch (error) {
+      console.error('Erreur génération QR code:', error);
+      alert('Erreur lors de la génération du QR code');
+    } finally {
+      setGeneratingQR(false);
     }
   };
 
@@ -43,9 +96,31 @@ export default function TrustPassPage() {
     }
   };
 
-  const handleDownloadQR = () => {
-    // Logique de téléchargement du QR code
-    alert('Téléchargement du QR code...');
+  const handleDownloadQR = async () => {
+    if (!company?.trust_pass?.id) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await axios.get(
+        `http://localhost:8000/api/trust-passes/${company.trust_pass.id}/download-qr`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: 'blob'
+        }
+      );
+
+      // Créer un lien de téléchargement
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `trustpass_${company.trust_code}.svg`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (error) {
+      console.error('Erreur téléchargement QR code:', error);
+      alert('Erreur lors du téléchargement du QR code');
+    }
   };
 
   const handleShare = () => {
@@ -117,8 +192,37 @@ export default function TrustPassPage() {
             </div>
 
             {/* QR Code */}
-            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl flex items-center justify-center mb-6 shadow-xl">
-              <QrCode className="w-48 h-48 text-blue-600" />
+            <div className="w-64 h-64 mx-auto bg-gradient-to-br from-blue-100 to-cyan-100 rounded-3xl mb-6 shadow-xl overflow-hidden p-6 flex items-center justify-center">
+              {qrCodeData?.url ? (
+                <div className="w-full h-full flex items-center justify-center">
+                  <img 
+                    src={qrCodeData.url} 
+                    alt="QR Code TrustPass" 
+                    className="max-w-full max-h-full object-contain"
+                  />
+                </div>
+              ) : (
+                <div className="text-center">
+                  <QrCode className="w-32 h-32 text-blue-400 mx-auto mb-4" />
+                  <button
+                    onClick={handleGenerateQR}
+                    disabled={generatingQR}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2 mx-auto"
+                  >
+                    {generatingQR ? (
+                      <>
+                        <RefreshCw className="w-4 h-4 animate-spin" />
+                        <span>Génération...</span>
+                      </>
+                    ) : (
+                      <>
+                        <QrCode className="w-4 h-4" />
+                        <span>Générer QR Code</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              )}
             </div>
 
             {/* Code TrustPass */}
@@ -145,13 +249,25 @@ export default function TrustPassPage() {
 
             {/* Actions */}
             <div className="space-y-3">
-              <button
-                onClick={handleDownloadQR}
-                className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-2xl hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"
-              >
-                <Download className="w-5 h-5" />
-                <span>Télécharger QR Code</span>
-              </button>
+              {qrCodeData?.url && (
+                <button
+                  onClick={handleDownloadQR}
+                  className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold rounded-2xl hover:shadow-xl transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"
+                >
+                  <Download className="w-5 h-5" />
+                  <span>Télécharger QR Code</span>
+                </button>
+              )}
+              {qrCodeData?.url && (
+                <button
+                  onClick={handleGenerateQR}
+                  disabled={generatingQR}
+                  className="w-full px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <RefreshCw className={`w-5 h-5 ${generatingQR ? 'animate-spin' : ''}`} />
+                  <span>Régénérer</span>
+                </button>
+              )}
               <button
                 onClick={handleShare}
                 className="w-full px-6 py-3 bg-white hover:bg-slate-50 text-slate-700 border-2 border-slate-200 rounded-2xl font-semibold transition-all duration-300 hover:scale-105 flex items-center justify-center space-x-2"

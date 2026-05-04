@@ -6,7 +6,8 @@ import {
   Bell, Search, ChevronRight, Activity, DollarSign, Package, Clock, CheckCircle2,
   XCircle, Zap, Target, Award, Sparkles
 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import dashboardService, { DashboardStats, Activity as ActivityType, Alert as AlertType } from '../../services/dashboardService';
 
 // Import des pages
 import CompaniesPage from './CompaniesPage';
@@ -19,6 +20,112 @@ import SettingsPage from './SettingsPage';
 
 function Overview() {
   const { user } = useAuth();
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [activities, setActivities] = useState<ActivityType[]>([]);
+  const [alerts, setAlerts] = useState<AlertType[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [statsData, activitiesData, alertsData] = await Promise.all([
+        dashboardService.getStats(),
+        dashboardService.getRecentActivities(4),
+        dashboardService.getAlerts(),
+      ]);
+      setStats(statsData);
+      setActivities(activitiesData);
+      setAlerts(alertsData.alerts);
+    } catch (error) {
+      console.error('Erreur lors du chargement du dashboard:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getActivityIcon = (type: string) => {
+    if (type.includes('company')) return CheckCircle2;
+    if (type.includes('transaction')) return Package;
+    if (type.includes('dispute')) return AlertTriangle;
+    if (type.includes('verification')) return FileCheck;
+    return Activity;
+  };
+
+  const getActivityColor = (type: string) => {
+    if (type.includes('company')) return 'from-emerald-500 to-teal-500';
+    if (type.includes('transaction')) return 'from-cyan-500 to-blue-500';
+    if (type.includes('dispute')) return 'from-amber-500 to-orange-500';
+    if (type.includes('verification_approuve')) return 'from-blue-500 to-cyan-500';
+    if (type.includes('verification_refuse')) return 'from-red-500 to-pink-500';
+    return 'from-slate-500 to-gray-500';
+  };
+
+  const formatTimeAgo = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInHours / 24);
+
+    if (diffInDays > 0) return `Il y a ${diffInDays} jour${diffInDays > 1 ? 's' : ''}`;
+    if (diffInHours > 0) return `Il y a ${diffInHours}h`;
+    return 'À l\'instant';
+  };
+
+  const getAlertIcon = (category: string) => {
+    if (category === 'disputes') return MessageSquare;
+    if (category === 'verifications') return FileCheck;
+    if (category === 'companies') return Building2;
+    if (category === 'risk') return Target;
+    if (category === 'transactions') return ShoppingCart;
+    return AlertTriangle;
+  };
+
+  const getAlertColorClasses = (type: string) => {
+    if (type === 'danger') return {
+      bg: 'from-red-50 to-pink-50',
+      border: 'border-red-200',
+      icon: 'from-red-500 to-pink-500',
+      text: 'text-red-900',
+      subtext: 'text-red-700'
+    };
+    if (type === 'warning') return {
+      bg: 'from-amber-50 to-orange-50',
+      border: 'border-amber-200',
+      icon: 'from-amber-500 to-orange-500',
+      text: 'text-amber-900',
+      subtext: 'text-amber-700'
+    };
+    return {
+      bg: 'from-blue-50 to-cyan-50',
+      border: 'border-blue-200',
+      icon: 'from-blue-500 to-cyan-500',
+      text: 'text-blue-900',
+      subtext: 'text-blue-700'
+    };
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (!stats) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600">Erreur lors du chargement des statistiques</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-8">
@@ -39,9 +146,11 @@ function Overview() {
             <div className="hidden lg:flex items-center space-x-4">
               <button className="btn-icon bg-white hover:bg-purple-50">
                 <Bell className="w-5 h-5 text-slate-600" />
-                <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full text-white text-xs flex items-center justify-center font-bold">
-                  3
-                </span>
+                {alerts.length > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 bg-gradient-to-r from-red-500 to-pink-500 rounded-full text-white text-xs flex items-center justify-center font-bold">
+                    {alerts.length}
+                  </span>
+                )}
               </button>
               <button className="btn-icon bg-white hover:bg-purple-50">
                 <Search className="w-5 h-5 text-slate-600" />
@@ -51,7 +160,7 @@ function Overview() {
         </div>
       </div>
 
-        {/* Stats principales avec design premium - Bleu uniquement */}
+      {/* Stats principales avec design premium - Données réelles */}
       <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Entreprises */}
         <div className="stat-card card-glow group">
@@ -61,13 +170,13 @@ function Overview() {
             </div>
             <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
               <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">+12%</span>
+              <span className="text-sm font-bold">+{stats.trends.new_companies}</span>
             </div>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Entreprises</p>
-            <p className="text-4xl font-bold text-slate-900">30</p>
-            <p className="text-sm text-slate-500">+5 ce mois-ci</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.companies.total}</p>
+            <p className="text-sm text-slate-500">{stats.companies.verified} vérifiées</p>
           </div>
         </div>
 
@@ -79,13 +188,13 @@ function Overview() {
             </div>
             <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
               <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">+23%</span>
+              <span className="text-sm font-bold">+{stats.trends.new_transactions}</span>
             </div>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Transactions</p>
-            <p className="text-4xl font-bold text-slate-900">156</p>
-            <p className="text-sm text-slate-500">Total complétées</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.transactions.total}</p>
+            <p className="text-sm text-slate-500">{stats.transactions.completed} complétées</p>
           </div>
         </div>
 
@@ -95,15 +204,17 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <MessageSquare className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-red-600 bg-red-50 px-3 py-1 rounded-full">
-              <AlertTriangle className="w-4 h-4" />
-              <span className="text-sm font-bold">3</span>
-            </div>
+            {stats.disputes.open > 0 && (
+              <div className="flex items-center space-x-1 text-red-600 bg-red-50 px-3 py-1 rounded-full">
+                <AlertTriangle className="w-4 h-4" />
+                <span className="text-sm font-bold">{stats.disputes.open}</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Litiges</p>
-            <p className="text-4xl font-bold text-slate-900">3</p>
-            <p className="text-sm text-slate-500">En cours de résolution</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.disputes.total}</p>
+            <p className="text-sm text-slate-500">{stats.disputes.resolved} résolus</p>
           </div>
         </div>
 
@@ -115,12 +226,12 @@ function Overview() {
             </div>
             <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
               <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">+5%</span>
+              <span className="text-sm font-bold">Excellent</span>
             </div>
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Score Moyen</p>
-            <p className="text-4xl font-bold text-slate-900">87</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.average_trust_score || 0}</p>
             <p className="text-sm text-slate-500">De confiance</p>
           </div>
         </div>
@@ -141,57 +252,32 @@ function Overview() {
             </button>
           </div>
           <div className="space-y-4">
-            {[
-              { 
-                type: 'success', 
-                icon: CheckCircle2,
-                text: 'Nouvelle entreprise inscrite', 
-                detail: 'TechCorp Solutions',
-                time: 'Il y a 2h',
-                color: 'from-emerald-500 to-teal-500'
-              },
-              { 
-                type: 'info', 
-                icon: FileCheck,
-                text: 'Vérification approuvée', 
-                detail: 'FoodDelivery Express',
-                time: 'Il y a 3h',
-                color: 'from-blue-500 to-cyan-500'
-              },
-              { 
-                type: 'warning', 
-                icon: AlertTriangle,
-                text: 'Nouveau litige ouvert', 
-                detail: 'Transaction #1234',
-                time: 'Il y a 5h',
-                color: 'from-amber-500 to-orange-500'
-              },
-              { 
-                type: 'success', 
-                icon: Package,
-                text: 'Transaction complétée', 
-                detail: '45,000 XOF',
-                time: 'Il y a 6h',
-                color: 'from-cyan-500 to-blue-500'
-              },
-            ].map((activity, index) => {
-              const Icon = activity.icon;
-              return (
-                <div key={index} className="flex items-start space-x-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl hover:shadow-md transition-all duration-300 group">
-                  <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${activity.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-semibold text-slate-900">{activity.text}</p>
-                    <p className="text-sm text-slate-600">{activity.detail}</p>
-                    <div className="flex items-center space-x-2 mt-1">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <p className="text-xs text-slate-500">{activity.time}</p>
+            {activities.length > 0 ? (
+              activities.map((activity, index) => {
+                const Icon = getActivityIcon(activity.type);
+                const colorClass = getActivityColor(activity.type);
+                return (
+                  <div key={index} className="flex items-start space-x-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl hover:shadow-md transition-all duration-300 group">
+                    <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${colorClass} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300`}>
+                      <Icon className="w-6 h-6 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-slate-900">{activity.title}</p>
+                      <p className="text-sm text-slate-600">{activity.description}</p>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Clock className="w-3 h-3 text-slate-400" />
+                        <p className="text-xs text-slate-500">{formatTimeAgo(activity.timestamp)}</p>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <Activity className="w-12 h-12 mx-auto mb-2 opacity-50" />
+                <p>Aucune activité récente</p>
+              </div>
+            )}
           </div>
         </div>
 
@@ -204,30 +290,33 @@ function Overview() {
             </h2>
           </div>
           <div className="space-y-4">
-            <div className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl hover:shadow-lg transition-all duration-300">
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0">
-                  <AlertTriangle className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-amber-900 mb-1">5 vérifications en attente</h3>
-                  <p className="text-sm text-amber-700">Depuis plus de 3 jours</p>
-                </div>
+            {alerts.length > 0 ? (
+              alerts.slice(0, 3).map((alert, index) => {
+                const Icon = getAlertIcon(alert.category);
+                const colors = getAlertColorClasses(alert.type);
+                return (
+                  <div key={index} className={`p-5 bg-gradient-to-br ${colors.bg} border-2 ${colors.border} rounded-2xl hover:shadow-lg transition-all duration-300`}>
+                    <div className="flex items-start space-x-3">
+                      <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${colors.icon} flex items-center justify-center flex-shrink-0`}>
+                        <Icon className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1">
+                        <h3 className={`font-bold ${colors.text} mb-1`}>{alert.title}</h3>
+                        <p className={`text-sm ${colors.subtext}`}>{alert.message}</p>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-slate-500">
+                <CheckCircle2 className="w-12 h-12 mx-auto mb-2 text-emerald-500" />
+                <p className="font-semibold text-emerald-600">Tout va bien !</p>
+                <p className="text-sm">Aucune alerte</p>
               </div>
-            </div>
+            )}
             
-            <div className="p-5 bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl hover:shadow-lg transition-all duration-300">
-              <div className="flex items-start space-x-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center flex-shrink-0">
-                  <XCircle className="w-5 h-5 text-white" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-bold text-red-900 mb-1">3 litiges non résolus</h3>
-                  <p className="text-sm text-red-700">Nécessitent une attention</p>
-                </div>
-              </div>
-            </div>
-
+            {/* Objectif mensuel */}
             <div className="p-5 bg-gradient-to-br from-blue-50 to-cyan-50 border-2 border-blue-200 rounded-2xl hover:shadow-lg transition-all duration-300">
               <div className="flex items-start space-x-3">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
@@ -235,9 +324,14 @@ function Overview() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-blue-900 mb-1">Objectif mensuel</h3>
-                  <p className="text-sm text-blue-700">87% atteint</p>
+                  <p className="text-sm text-blue-700">
+                    {stats.companies.total} / 50 entreprises
+                  </p>
                   <div className="mt-2 w-full bg-blue-200 rounded-full h-2">
-                    <div className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full" style={{ width: '87%' }}></div>
+                    <div 
+                      className="bg-gradient-to-r from-blue-500 to-cyan-500 h-2 rounded-full transition-all duration-500" 
+                      style={{ width: `${Math.min((stats.companies.total / 50) * 100, 100)}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>

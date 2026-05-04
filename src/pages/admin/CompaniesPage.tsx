@@ -1,15 +1,18 @@
 import { useState, useEffect } from 'react';
 import { companyService } from '../../services/api';
-import { Building2, Search, Filter, Eye, Edit, Trash2, TrendingUp, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Building2, Search, Filter, Eye, Edit, Trash2, RefreshCw } from 'lucide-react';
 
 interface Company {
   id: number;
-  name: string;
-  sector: string;
-  email: string;
+  commercial_name: string;
+  business_type: string;
+  trust_code: string;
   phone: string;
+  phone_masked: string;
+  city: string;
+  country_code: string;
   trust_score: number;
-  is_verified: boolean;
+  verification_status: string;
   created_at: string;
 }
 
@@ -17,7 +20,7 @@ export default function CompaniesPage() {
   const [companies, setCompanies] = useState<Company[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterVerified, setFilterVerified] = useState<'all' | 'verified' | 'unverified'>('all');
+  const [filterVerified, setFilterVerified] = useState<'all' | 'verifie' | 'en_attente' | 'signale'>('all');
 
   useEffect(() => {
     loadCompanies();
@@ -27,12 +30,13 @@ export default function CompaniesPage() {
     try {
       setLoading(true);
       const response = await companyService.getAll();
-      // Gérer différents formats de réponse
-      const data = response.data.data || response.data || [];
+      // Gérer différents formats de réponse paginée
+      const data = response.data.data?.data || response.data.data || response.data || [];
+      console.log('Companies loaded:', data);
       setCompanies(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erreur chargement entreprises:', error);
-      setCompanies([]); // Initialiser avec un tableau vide en cas d'erreur
+      setCompanies([]);
     } finally {
       setLoading(false);
     }
@@ -59,26 +63,39 @@ export default function CompaniesPage() {
   };
 
   const filteredCompanies = companies.filter(company => {
-    const matchesSearch = company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.sector.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterVerified === 'all' ||
-                         (filterVerified === 'verified' && company.is_verified) ||
-                         (filterVerified === 'unverified' && !company.is_verified);
+    const matchesSearch = company.commercial_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.business_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.trust_code?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesFilter = filterVerified === 'all' || company.verification_status === filterVerified;
     return matchesSearch && matchesFilter;
   });
 
   const getScoreColor = (score: number) => {
-    if (score >= 80) return 'text-success-600 bg-success-100';
-    if (score >= 60) return 'text-primary-600 bg-primary-100';
-    if (score >= 40) return 'text-warning-600 bg-warning-100';
-    return 'text-danger-600 bg-danger-100';
+    if (score >= 80) return 'text-emerald-600 bg-emerald-100';
+    if (score >= 60) return 'text-blue-600 bg-blue-100';
+    if (score >= 40) return 'text-amber-600 bg-amber-100';
+    return 'text-red-600 bg-red-100';
   };
 
-  // Stats sécurisées
+  const getStatusBadge = (status: string) => {
+    const badges: { [key: string]: { label: string; class: string } } = {
+      verifie: { label: 'Vérifié', class: 'bg-emerald-100 text-emerald-700' },
+      en_attente: { label: 'En attente', class: 'bg-amber-100 text-amber-700' },
+      signale: { label: 'Signalé', class: 'bg-red-100 text-red-700' },
+      refuse: { label: 'Refusé', class: 'bg-gray-100 text-gray-700' },
+    };
+    const badge = badges[status] || { label: status, class: 'bg-gray-100 text-gray-700' };
+    return (
+      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.class}`}>
+        {badge.label}
+      </span>
+    );
+  };
+
   const stats = {
     total: companies.length,
-    verified: companies.filter(c => c.is_verified).length,
-    unverified: companies.filter(c => !c.is_verified).length,
+    verified: companies.filter(c => c.verification_status === 'verifie').length,
+    pending: companies.filter(c => c.verification_status === 'en_attente').length,
     avgScore: companies.length > 0 
       ? Math.round(companies.reduce((acc, c) => acc + (c.trust_score || 0), 0) / companies.length) 
       : 0
@@ -103,7 +120,7 @@ export default function CompaniesPage() {
               placeholder="Rechercher une entreprise..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all"
+              className="w-full pl-10 pr-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
             />
           </div>
 
@@ -112,11 +129,12 @@ export default function CompaniesPage() {
             <select
               value={filterVerified}
               onChange={(e) => setFilterVerified(e.target.value as any)}
-              className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all"
+              className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
             >
               <option value="all">Toutes les entreprises</option>
-              <option value="verified">Vérifiées uniquement</option>
-              <option value="unverified">Non vérifiées</option>
+              <option value="verifie">Vérifiées uniquement</option>
+              <option value="en_attente">En attente</option>
+              <option value="signale">Signalées</option>
             </select>
           </div>
         </div>
@@ -129,15 +147,15 @@ export default function CompaniesPage() {
           <div className="text-sm text-slate-600">Total</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-success-600">{stats.verified}</div>
+          <div className="text-2xl font-bold text-emerald-600">{stats.verified}</div>
           <div className="text-sm text-slate-600">Vérifiées</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-warning-600">{stats.unverified}</div>
+          <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
           <div className="text-sm text-slate-600">En attente</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-primary-600">{stats.avgScore}</div>
+          <div className="text-2xl font-bold text-blue-600">{stats.avgScore}</div>
           <div className="text-sm text-slate-600">Score moyen</div>
         </div>
       </div>
@@ -145,7 +163,7 @@ export default function CompaniesPage() {
       {/* Liste des entreprises */}
       {loading ? (
         <div className="glass p-12 rounded-2xl text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-primary-600 mx-auto mb-4"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mx-auto mb-4"></div>
           <p className="text-slate-600">Chargement des entreprises...</p>
         </div>
       ) : filteredCompanies.length === 0 ? (
@@ -173,30 +191,26 @@ export default function CompaniesPage() {
                   <tr key={company.id} className="hover:bg-slate-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-gradient-to-br from-primary-600 to-accent-600 rounded-xl flex items-center justify-center">
+                        <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center">
                           <Building2 className="w-5 h-5 text-white" />
                         </div>
                         <div>
-                          <div className="font-semibold text-slate-900">{company.name}</div>
-                          <div className="text-sm text-slate-500">ID: {company.id}</div>
+                          <div className="font-semibold text-slate-900">{company.commercial_name}</div>
+                          <div className="text-sm text-slate-500">{company.trust_code}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-primary-100 text-primary-700">
-                        {company.sector}
-                      </span>
+                      <div className="text-sm text-slate-900 capitalize">{company.business_type}</div>
+                      <div className="text-xs text-slate-500">{company.city}, {company.country_code}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-sm">
-                        <div className="text-slate-900">{company.email}</div>
-                        <div className="text-slate-500">{company.phone}</div>
-                      </div>
+                      <div className="text-sm text-slate-900">{company.phone_masked || company.phone}</div>
                     </td>
                     <td className="px-6 py-4 text-center">
                       <div className="flex items-center justify-center space-x-2">
-                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-bold ${getScoreColor(company.trust_score)}`}>
-                          {company.trust_score}
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold ${getScoreColor(company.trust_score || 0)}`}>
+                          {company.trust_score || 0}
                         </span>
                         <button
                           onClick={() => handleRecalculateScore(company.id)}
@@ -208,35 +222,25 @@ export default function CompaniesPage() {
                       </div>
                     </td>
                     <td className="px-6 py-4 text-center">
-                      {company.is_verified ? (
-                        <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-success-100 text-success-700">
-                          <CheckCircle className="w-3 h-3" />
-                          <span>Vérifiée</span>
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold bg-warning-100 text-warning-700">
-                          <XCircle className="w-3 h-3" />
-                          <span>En attente</span>
-                        </span>
-                      )}
+                      {getStatusBadge(company.verification_status)}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
                         <button
-                          className="p-2 hover:bg-primary-100 text-primary-600 rounded-lg transition-colors"
+                          className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
                           title="Voir détails"
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
-                          className="p-2 hover:bg-accent-100 text-accent-600 rounded-lg transition-colors"
+                          className="p-2 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors"
                           title="Modifier"
                         >
                           <Edit className="w-4 h-4" />
                         </button>
                         <button
                           onClick={() => handleDelete(company.id)}
-                          className="p-2 hover:bg-danger-100 text-danger-600 rounded-lg transition-colors"
+                          className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
                           title="Supprimer"
                         >
                           <Trash2 className="w-4 h-4" />

@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { transactionService } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+import { transactionService, companyService } from '../../services/api';
+import { useAuth } from '../../context/AuthContext';
 import { 
   ShoppingBag, Search, Plus, Filter, Calendar, TrendingUp, 
-  CheckCircle2, Clock, XCircle, Eye, Download, DollarSign
+  CheckCircle2, Clock, XCircle, Eye, Download, DollarSign, FileText
 } from 'lucide-react';
 
 interface Transaction {
@@ -16,33 +18,67 @@ interface Transaction {
 }
 
 export default function TransactionsPage() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [showModal, setShowModal] = useState(false);
+  const [companyId, setCompanyId] = useState<number | null>(null);
   const [newTransaction, setNewTransaction] = useState({
     description: '',
     amount: '',
-    buyer_company_id: '',
-    seller_company_id: '',
+    buyer_name: '',
+    buyer_phone_masked: '',
   });
 
   useEffect(() => {
-    loadTransactions();
+    loadCompanyAndTransactions();
   }, []);
+
+  const loadCompanyAndTransactions = async () => {
+    try {
+      setLoading(true);
+      
+      // Récupérer l'entreprise de l'utilisateur
+      const companiesResponse = await companyService.getAll();
+      const companies = companiesResponse.data.data?.data || companiesResponse.data.data || [];
+      const myCompany = companies.find((c: any) => c.user_id === user?.id);
+      
+      if (myCompany) {
+        setCompanyId(myCompany.id);
+      }
+      
+      // Charger les transactions
+      await loadTransactions();
+    } catch (error) {
+      console.error('Erreur chargement:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const loadTransactions = async () => {
     try {
-      setLoading(true);
       const response = await transactionService.getAll();
-      const data = response.data.data || response.data || [];
+      // Gérer la structure paginée de Laravel
+      let data;
+      if (response.data.data?.data) {
+        // Structure paginée : response.data.data.data
+        data = response.data.data.data;
+      } else if (response.data.data) {
+        // Structure simple : response.data.data
+        data = response.data.data;
+      } else {
+        // Fallback : response.data
+        data = response.data;
+      }
+      
       setTransactions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erreur chargement transactions:', error);
       setTransactions([]);
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -52,17 +88,26 @@ export default function TransactionsPage() {
       return;
     }
 
+    if (!companyId) {
+      alert('Impossible de trouver votre entreprise. Veuillez rafraîchir la page.');
+      return;
+    }
+
     try {
       await transactionService.create({
-        ...newTransaction,
+        company_id: companyId,
+        description: newTransaction.description,
         amount: parseFloat(newTransaction.amount),
+        buyer_name: newTransaction.buyer_name || null,
+        buyer_phone_masked: newTransaction.buyer_phone_masked || null,
       });
       setShowModal(false);
-      setNewTransaction({ description: '', amount: '', buyer_company_id: '', seller_company_id: '' });
+      setNewTransaction({ description: '', amount: '', buyer_name: '', buyer_phone_masked: '' });
       loadTransactions();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur création transaction:', error);
-      alert('Erreur lors de la création de la transaction');
+      const errorMessage = error.response?.data?.message || 'Erreur lors de la création de la transaction';
+      alert(errorMessage);
     }
   };
 
@@ -272,10 +317,21 @@ export default function TransactionsPage() {
                     </td>
                     <td>
                       <div className="flex items-center space-x-2">
-                        <button className="p-2 hover:bg-blue-100 rounded-lg transition-colors" title="Voir détails">
-                          <Eye className="w-4 h-4 text-blue-600" />
+                        <button 
+                          onClick={() => navigate(`/entreprise/transactions/${transaction.id}/receipt`)}
+                          className="p-2 hover:bg-blue-100 rounded-lg transition-colors" 
+                          title="Voir le reçu"
+                        >
+                          <FileText className="w-4 h-4 text-blue-600" />
                         </button>
-                        <button className="p-2 hover:bg-slate-100 rounded-lg transition-colors" title="Télécharger reçu">
+                        <button 
+                          onClick={() => {
+                            const token = localStorage.getItem('token');
+                            window.open(`http://localhost:8000/api/transactions/${transaction.id}/receipt/download?token=${token}`, '_blank');
+                          }}
+                          className="p-2 hover:bg-slate-100 rounded-lg transition-colors" 
+                          title="Télécharger reçu PDF"
+                        >
                           <Download className="w-4 h-4 text-slate-600" />
                         </button>
                       </div>
@@ -325,6 +381,34 @@ export default function TransactionsPage() {
                   placeholder="Ex: 50000"
                 />
               </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">
+                    Nom du Client (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={newTransaction.buyer_name}
+                    onChange={(e) => setNewTransaction({ ...newTransaction, buyer_name: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                    placeholder="Ex: Fatou Diop"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">
+                    Téléphone du Client (optionnel)
+                  </label>
+                  <input
+                    type="text"
+                    value={newTransaction.buyer_phone_masked}
+                    onChange={(e) => setNewTransaction({ ...newTransaction, buyer_phone_masked: e.target.value })}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                    placeholder="Ex: +221 77 *** ** 01"
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="flex items-center space-x-3">
@@ -338,7 +422,7 @@ export default function TransactionsPage() {
               <button
                 onClick={() => {
                   setShowModal(false);
-                  setNewTransaction({ description: '', amount: '', buyer_company_id: '', seller_company_id: '' });
+                  setNewTransaction({ description: '', amount: '', buyer_name: '', buyer_phone_masked: '' });
                 }}
                 className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors"
               >
