@@ -4,10 +4,11 @@ import {
   LayoutDashboard, Building2, Users, FileCheck, AlertTriangle, BarChart3,
   LogOut, Menu, X, Settings, TrendingUp, ShoppingCart, MessageSquare,
   Bell, Search, ChevronRight, Activity, DollarSign, Package, Clock, CheckCircle2,
-  XCircle, Zap, Target, Award, Sparkles
+  XCircle, Zap, Target, Award, Sparkles, Shield
 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import dashboardService, { DashboardStats, Activity as ActivityType, Alert as AlertType } from '../../services/dashboardService';
+import NotificationBell from '../../components/NotificationBell';
 
 // Import des pages
 import CompaniesPage from './CompaniesPage';
@@ -17,6 +18,7 @@ import TransactionsPage from './TransactionsPage';
 import DisputesPage from './DisputesPage';
 import StatsPage from './StatsPage';
 import SettingsPage from './SettingsPage';
+import RiskCheckPage from './RiskCheckPage';
 
 function Overview() {
   const { user } = useAuth();
@@ -385,6 +387,7 @@ export default function AdminDashboard() {
     { name: 'Entreprises', href: '/admin/companies', icon: Building2, color: 'text-cyan-600' },
     { name: 'Utilisateurs', href: '/admin/users', icon: Users, color: 'text-indigo-600' },
     { name: 'Vérifications', href: '/admin/verifications', icon: FileCheck, color: 'text-blue-500' },
+    { name: 'Risk Check', href: '/admin/risk-check', icon: Shield, color: 'text-purple-600' },
     { name: 'Transactions', href: '/admin/transactions', icon: ShoppingCart, color: 'text-cyan-500' },
     { name: 'Litiges', href: '/admin/disputes', icon: AlertTriangle, color: 'text-amber-600' },
     { name: 'Statistiques', href: '/admin/stats', icon: BarChart3, color: 'text-blue-700' },
@@ -467,6 +470,7 @@ export default function AdminDashboard() {
             </button>
             <div className="flex-1 lg:flex-none"></div>
             <div className="flex items-center space-x-4">
+              <NotificationBell />
               <span className="text-sm text-slate-600 hidden sm:block font-medium">
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
@@ -481,6 +485,7 @@ export default function AdminDashboard() {
             <Route path="companies" element={<CompaniesPage />} />
             <Route path="users" element={<UsersPage />} />
             <Route path="verifications" element={<VerificationsPage />} />
+            <Route path="risk-check" element={<RiskCheckPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="disputes" element={<DisputesPage />} />
             <Route path="stats" element={<StatsPage />} />

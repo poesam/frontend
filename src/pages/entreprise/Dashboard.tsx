@@ -6,6 +6,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { useState } from 'react';
+import NotificationBell from '../../components/NotificationBell';
 
 // Import des pages
 import TrustPassPage from './TrustPassPage';
@@ -14,6 +15,7 @@ import VerificationsPage from './VerificationsPage';
 import DisputesPage from './DisputesPage';
 import ProfilePage from './ProfilePage';
 import ReceiptPage from './ReceiptPage';
+import RiskCheckPage from './RiskCheckPage';
 
 // Pages du dashboard entreprise
 function Overview() {
@@ -263,6 +265,7 @@ export default function EntrepriseDashboard() {
     { name: 'Tableau de bord', href: '/entreprise/dashboard', icon: LayoutDashboard },
     { name: 'Mon Entreprise', href: '/entreprise/company', icon: Building2 },
     { name: 'Mon TrustPass', href: '/entreprise/trustpass', icon: QrCode },
+    { name: 'Risk Check', href: '/entreprise/risk-check', icon: AlertCircle },
     { name: 'Transactions', href: '/entreprise/transactions', icon: ShoppingBag },
     { name: 'Vérifications', href: '/entreprise/verifications', icon: FileText },
     { name: 'Litiges', href: '/entreprise/disputes', icon: MessageSquare },
@@ -346,6 +349,7 @@ export default function EntrepriseDashboard() {
             <div className="flex-1 lg:flex-none"></div>
 
             <div className="flex items-center space-x-4">
+              <NotificationBell />
               <span className="text-sm text-slate-600 hidden sm:block font-medium">
                 {new Date().toLocaleDateString('fr-FR', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
@@ -359,6 +363,7 @@ export default function EntrepriseDashboard() {
             <Route path="dashboard" element={<Overview />} />
             <Route path="company" element={<ProfilePage />} />
             <Route path="trustpass" element={<TrustPassPage />} />
+            <Route path="risk-check" element={<RiskCheckPage />} />
             <Route path="transactions" element={<TransactionsPage />} />
             <Route path="transactions/:id/receipt" element={<ReceiptPage />} />
             <Route path="verifications" element={<VerificationsPage />} />

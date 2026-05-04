@@ -23,6 +23,11 @@ interface Transaction {
     phone_masked: string;
     verification_status: string;
     trust_score: number;
+    trust_pass?: {
+      id: number;
+      qr_code_url: string;
+      public_url: string;
+    };
   };
   buyer?: {
     id: number;
@@ -426,6 +431,42 @@ const ReceiptPage: React.FC = () => {
                 {formatAmount(transaction.amount, transaction.currency)}
               </p>
             </div>
+
+            {/* QR Code Section */}
+            {transaction.company.trust_pass?.qr_code_url && (
+              <div style={{ marginBottom: '20px' }}>
+                <h2 style={{ 
+                  fontSize: '9pt', 
+                  color: '#1e293b', 
+                  fontWeight: 700, 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '1.5px', 
+                  marginBottom: '12px', 
+                  paddingBottom: '6px', 
+                  borderBottom: '2px solid #e2e8f0' 
+                }}>
+                  Preuve de Vérification
+                </h2>
+                <div style={{ background: '#f8fafc', padding: '20px', textAlign: 'center', borderRadius: '2px' }}>
+                  <div style={{ background: 'white', display: 'inline-block', padding: '15px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                    <img 
+                      src={transaction.company.trust_pass.qr_code_url} 
+                      alt="QR Code TrustPass" 
+                      style={{ width: '150px', height: '150px', display: 'block' }}
+                    />
+                  </div>
+                  <p style={{ fontSize: '8pt', color: '#64748b', marginTop: '12px', lineHeight: 1.6 }}>
+                    Scannez ce QR code pour vérifier l'authenticité du vendeur<br />
+                    <span style={{ fontFamily: "'Courier New', monospace", fontWeight: 700, color: '#1e293b' }}>
+                      {transaction.company.trust_code}
+                    </span>
+                  </p>
+                  <p style={{ fontSize: '7pt', color: '#94a3b8', marginTop: '8px' }}>
+                    {transaction.company.trust_pass.public_url}
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Footer */}
