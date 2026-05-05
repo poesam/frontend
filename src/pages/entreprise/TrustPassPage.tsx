@@ -14,6 +14,7 @@ export default function TrustPassPage() {
   const [copied, setCopied] = useState(false);
   const [generatingQR, setGeneratingQR] = useState(false);
   const [qrCodeData, setQrCodeData] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
 
   useEffect(() => {
     loadCompanyData();
@@ -36,10 +37,31 @@ export default function TrustPassPage() {
       if (myCompany?.trust_pass?.id) {
         await loadQRCode(myCompany.trust_pass.id);
       }
+
+      // Charger les statistiques réelles
+      if (myCompany?.id) {
+        await loadStats(myCompany.id);
+      }
     } catch (error) {
       console.error('Erreur chargement entreprise:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadStats = async (companyId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`${API_URL}/api/companies/${companyId}/stats`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (response.data.success) {
+        setStats(response.data.data);
+      }
+    } catch (error) {
+      console.error('Erreur chargement statistiques:', error);
     }
   };
 
@@ -404,19 +426,25 @@ export default function TrustPassPage() {
 
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">247</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {stats?.trustpass?.views_this_month || 0}
+                </div>
                 <p className="text-sm font-semibold text-slate-600">Vues du TrustPass</p>
                 <p className="text-xs text-slate-500 mt-1">Ce mois-ci</p>
               </div>
 
               <div className="p-6 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl text-center">
-                <div className="text-3xl font-bold text-cyan-600 mb-2">89</div>
+                <div className="text-3xl font-bold text-cyan-600 mb-2">
+                  {stats?.verifications?.total || 0}
+                </div>
                 <p className="text-sm font-semibold text-slate-600">Vérifications</p>
                 <p className="text-xs text-slate-500 mt-1">Total</p>
               </div>
 
               <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl text-center">
-                <div className="text-3xl font-bold text-indigo-600 mb-2">12</div>
+                <div className="text-3xl font-bold text-indigo-600 mb-2">
+                  {stats?.trustpass?.shares || 0}
+                </div>
                 <p className="text-sm font-semibold text-slate-600">Partages</p>
                 <p className="text-xs text-slate-500 mt-1">Cette semaine</p>
               </div>
