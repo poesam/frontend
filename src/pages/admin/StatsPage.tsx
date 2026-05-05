@@ -88,7 +88,7 @@ export default function StatsPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-primary-600 to-primary-700 rounded-xl flex items-center justify-center">
               <Building2 className="w-6 h-6 text-white" />
             </div>
-            {stats.companies && (
+            {stats.companies?.growth !== undefined && (
               <div className={`flex items-center space-x-1 ${getGrowthColor(stats.companies.growth)}`}>
                 {(() => {
                   const Icon = getGrowthIcon(stats.companies.growth);
@@ -108,7 +108,7 @@ export default function StatsPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-success-600 to-success-700 rounded-xl flex items-center justify-center">
               <ShoppingBag className="w-6 h-6 text-white" />
             </div>
-            {stats.transactions && (
+            {stats.transactions?.growth !== undefined && (
               <div className={`flex items-center space-x-1 ${getGrowthColor(stats.transactions.growth)}`}>
                 {(() => {
                   const Icon = getGrowthIcon(stats.transactions.growth);
@@ -128,7 +128,7 @@ export default function StatsPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-warning-600 to-warning-700 rounded-xl flex items-center justify-center">
               <MessageSquare className="w-6 h-6 text-white" />
             </div>
-            {stats.disputes && (
+            {stats.disputes?.growth !== undefined && (
               <div className={`flex items-center space-x-1 ${getGrowthColor(stats.disputes.growth)}`}>
                 {(() => {
                   const Icon = getGrowthIcon(stats.disputes.growth);
@@ -148,7 +148,7 @@ export default function StatsPage() {
             <div className="w-12 h-12 bg-gradient-to-br from-accent-600 to-accent-700 rounded-xl flex items-center justify-center">
               <BarChart3 className="w-6 h-6 text-white" />
             </div>
-            {stats.avgScore && (
+            {stats.avgScore?.growth !== undefined && (
               <div className={`flex items-center space-x-1 ${getGrowthColor(stats.avgScore.growth)}`}>
                 {(() => {
                   const Icon = getGrowthIcon(stats.avgScore.growth);
@@ -158,13 +158,13 @@ export default function StatsPage() {
               </div>
             )}
           </div>
-          <div className="text-3xl font-bold text-slate-900 mb-1">{stats.avgScore?.value || 0}</div>
+          <div className="text-3xl font-bold text-slate-900 mb-1">{stats.average_trust_score || 0}</div>
           <div className="text-sm text-slate-600">Score Moyen</div>
         </div>
       </div>
 
       {/* Revenus */}
-      {stats.revenue && (
+      {stats.transactions?.total_amount && (
         <div className="glass p-8 rounded-2xl mb-8">
           <div className="flex items-center justify-between mb-6">
             <div>
@@ -176,14 +176,16 @@ export default function StatsPage() {
             </div>
           </div>
           <div className="flex items-end space-x-4">
-            <div className="text-5xl font-bold gradient-text">{formatAmount(stats.revenue.total)}</div>
-            <div className={`flex items-center space-x-2 mb-2 ${getGrowthColor(stats.revenue.growth)}`}>
-              {(() => {
-                const Icon = getGrowthIcon(stats.revenue.growth);
-                return <Icon className="w-6 h-6" />;
-              })()}
-              <span className="text-2xl font-bold">{formatPercent(stats.revenue.growth)}</span>
-            </div>
+            <div className="text-5xl font-bold gradient-text">{formatAmount(stats.transactions.total_amount)}</div>
+            {stats.revenue?.growth !== undefined && (
+              <div className={`flex items-center space-x-2 mb-2 ${getGrowthColor(stats.revenue.growth)}`}>
+                {(() => {
+                  const Icon = getGrowthIcon(stats.revenue.growth);
+                  return <Icon className="w-6 h-6" />;
+                })()}
+                <span className="text-2xl font-bold">{formatPercent(stats.revenue.growth)}</span>
+              </div>
+            )}
           </div>
         </div>
       )}
