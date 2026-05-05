@@ -4,14 +4,15 @@ import { ShoppingBag, Search, DollarSign, CheckCircle, Clock, XCircle, Package, 
 
 interface Transaction {
   id: number;
-  buyer_company: {
+  buyer?: {
     name: string;
   };
-  seller_company: {
-    name: string;
+  company?: {
+    commercial_name: string;
   };
+  buyer_name?: string;
   amount: number;
-  status: 'pending' | 'paid' | 'delivered' | 'completed' | 'cancelled';
+  status: string;
   description: string;
   created_at: string;
 }
@@ -41,22 +42,32 @@ export default function TransactionsPage() {
   };
 
   const filteredTransactions = transactions.filter(t => {
-    const matchesSearch = t.buyer_company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         t.seller_company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const buyerName = t.buyer?.name || t.buyer_name || '';
+    const sellerName = t.company?.commercial_name || '';
+    const matchesSearch = buyerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         sellerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          t.description.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || t.status === filterStatus;
+    const matchesFilter = filterStatus === 'all' || t.status === filterStatus || 
+                         (filterStatus === 'pending' && t.status === 'en_attente') ||
+                         (filterStatus === 'paid' && (t.status === 'paid' || t.status === 'paye')) ||
+                         (filterStatus === 'delivered' && (t.status === 'delivered' || t.status === 'en_livraison'));
     return matchesSearch && matchesFilter;
   });
 
   const getStatusBadge = (status: string) => {
-    const badges = {
+    const badges: Record<string, any> = {
       pending: { bg: 'bg-slate-100', text: 'text-slate-700', icon: Clock, label: 'En attente' },
+      en_attente: { bg: 'bg-slate-100', text: 'text-slate-700', icon: Clock, label: 'En attente' },
       paid: { bg: 'bg-primary-100', text: 'text-primary-700', icon: DollarSign, label: 'Payée' },
+      paye: { bg: 'bg-primary-100', text: 'text-primary-700', icon: DollarSign, label: 'Payée' },
       delivered: { bg: 'bg-warning-100', text: 'text-warning-700', icon: Package, label: 'Livrée' },
+      en_livraison: { bg: 'bg-warning-100', text: 'text-warning-700', icon: Package, label: 'En livraison' },
       completed: { bg: 'bg-success-100', text: 'text-success-700', icon: CheckCircle, label: 'Complétée' },
+      livre: { bg: 'bg-success-100', text: 'text-success-700', icon: CheckCircle, label: 'Livrée' },
       cancelled: { bg: 'bg-danger-100', text: 'text-danger-700', icon: XCircle, label: 'Annulée' },
+      annule: { bg: 'bg-danger-100', text: 'text-danger-700', icon: XCircle, label: 'Annulée' },
     };
-    const badge = badges[status as keyof typeof badges];
+    const badge = badges[status] || badges.pending;
     const Icon = badge.icon;
     
     return (
@@ -123,19 +134,19 @@ export default function TransactionsPage() {
         </div>
         <div className="glass p-4 rounded-xl">
           <div className="text-2xl font-bold text-slate-600">
-            {transactions.filter(t => t.status === 'pending').length}
+            {transactions.filter(t => t.status === 'pending' || t.status === 'en_attente').length}
           </div>
           <div className="text-sm text-slate-600">En attente</div>
         </div>
         <div className="glass p-4 rounded-xl">
           <div className="text-2xl font-bold text-primary-600">
-            {transactions.filter(t => t.status === 'paid').length}
+            {transactions.filter(t => t.status === 'paid' || t.status === 'paye').length}
           </div>
           <div className="text-sm text-slate-600">Payées</div>
         </div>
         <div className="glass p-4 rounded-xl">
           <div className="text-2xl font-bold text-success-600">
-            {transactions.filter(t => t.status === 'completed').length}
+            {transactions.filter(t => t.status === 'completed' || t.status === 'livre' || t.status === 'delivered').length}
           </div>
           <div className="text-sm text-slate-600">Complétées</div>
         </div>
@@ -180,10 +191,10 @@ export default function TransactionsPage() {
                       <span className="font-mono text-sm text-slate-600">#{transaction.id}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{transaction.buyer_company.name}</div>
+                      <div className="font-medium text-slate-900">{transaction.buyer?.name || transaction.buyer_name || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4">
-                      <div className="font-medium text-slate-900">{transaction.seller_company.name}</div>
+                      <div className="font-medium text-slate-900">{transaction.company?.commercial_name || 'N/A'}</div>
                     </td>
                     <td className="px-6 py-4">
                       <div className="text-sm text-slate-600 max-w-xs truncate">{transaction.description}</div>
