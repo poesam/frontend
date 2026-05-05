@@ -68,6 +68,9 @@ export const companyService = {
   getByTrustCode: (trustCode: string) =>
     api.get(`/trustpass/${trustCode}`),
   
+  getStats: (id: number) =>
+    api.get(`/companies/${id}/stats`),
+  
   create: (data: any) =>
     api.post('/companies', data),
   
