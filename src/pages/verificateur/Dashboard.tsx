@@ -1,11 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { verificationService } from '../../services/api';
 import { 
   LayoutDashboard, CheckCircle2, Clock, FileCheck, BarChart3,
   LogOut, Menu, X, AlertCircle, TrendingUp, Award, Sparkles, Eye,
   XCircle, FileText, Calendar, Activity
 } from 'lucide-react';
-import { useState } from 'react';
 
 // Import des pages
 import PendingPage from './PendingPage';
@@ -14,6 +15,49 @@ import StatsPage from './StatsPage';
 
 function Overview() {
   const { user } = useAuth();
+  const [stats, setStats] = useState<any>(null);
+  const [recentVerifications, setRecentVerifications] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      const response = await verificationService.getAll();
+      const data = response.data.data || response.data || [];
+      const verifications = Array.isArray(data) ? data : [];
+      
+      // Calculer les stats
+      const pending = verifications.filter((v: any) => v.status === 'pending').length;
+      const approved = verifications.filter((v: any) => v.status === 'approved').length;
+      const rejected = verifications.filter((v: any) => v.status === 'rejected').length;
+      const total = verifications.length;
+      const approvalRate = total > 0 ? Math.round((approved / (approved + rejected)) * 100) || 0 : 0;
+      
+      setStats({ pending, approved, rejected, total, approvalRate });
+      
+      // Prendre les 4 dernières vérifications
+      setRecentVerifications(verifications.slice(0, 4));
+    } catch (error) {
+      console.error('Erreur chargement données:', error);
+      setStats({ pending: 0, approved: 0, rejected: 0, total: 0, approvalRate: 0 });
+      setRecentVerifications([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div className="glass p-12 rounded-2xl text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-slate-600">Chargement...</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-8">
@@ -48,14 +92,16 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <Clock className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-sm font-bold">Urgent</span>
-            </div>
+            {stats.pending > 0 && (
+              <div className="flex items-center space-x-1 text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-bold">Urgent</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">En attente</p>
-            <p className="text-4xl font-bold text-slate-900">5</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.pending}</p>
             <p className="text-sm text-slate-500">Demandes à traiter</p>
           </div>
         </div>
@@ -66,15 +112,17 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <CheckCircle2 className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">+15%</span>
-            </div>
+            {stats.approved > 0 && (
+              <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-sm font-bold">+{stats.approved}</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Approuvées</p>
-            <p className="text-4xl font-bold text-slate-900">23</p>
-            <p className="text-sm text-slate-500">Ce mois-ci</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.approved}</p>
+            <p className="text-sm text-slate-500">Total</p>
           </div>
         </div>
 
@@ -84,14 +132,16 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-red-500 to-pink-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <XCircle className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
-              <span className="text-sm font-bold">1</span>
-            </div>
+            {stats.rejected > 0 && (
+              <div className="flex items-center space-x-1 text-slate-600 bg-slate-100 px-3 py-1 rounded-full">
+                <span className="text-sm font-bold">{stats.rejected}</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Refusées</p>
-            <p className="text-4xl font-bold text-slate-900">1</p>
-            <p className="text-sm text-slate-500">Ce mois-ci</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.rejected}</p>
+            <p className="text-sm text-slate-500">Total</p>
           </div>
         </div>
 
@@ -101,14 +151,16 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <Award className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">Excellent</span>
-            </div>
+            {stats.approvalRate >= 90 && (
+              <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-sm font-bold">Excellent</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Taux d'approbation</p>
-            <p className="text-4xl font-bold text-slate-900">95%</p>
+            <p className="text-4xl font-bold text-slate-900">{stats.approvalRate}%</p>
             <p className="text-sm text-slate-500">Performance</p>
           </div>
         </div>
@@ -129,85 +181,66 @@ function Overview() {
             </Link>
           </div>
 
-          <div className="space-y-4">
-            {[
-              {
-                id: 1,
-                company: 'TechCorp Solutions',
-                type: 'Vérification initiale',
-                date: 'Il y a 2h',
-                status: 'pending',
-                documents: 5,
-              },
-              {
-                id: 2,
-                company: 'FoodDelivery Express',
-                type: 'Renouvellement',
-                date: 'Il y a 5h',
-                status: 'pending',
-                documents: 3,
-              },
-              {
-                id: 3,
-                company: 'Fashion Store',
-                type: 'Vérification initiale',
-                date: 'Il y a 1 jour',
-                status: 'approved',
-                documents: 4,
-              },
-              {
-                id: 4,
-                company: 'Electronics Hub',
-                type: 'Mise à jour',
-                date: 'Il y a 2 jours',
-                status: 'approved',
-                documents: 2,
-              },
-            ].map((request) => (
-              <div key={request.id} className="flex items-start space-x-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl hover:shadow-md transition-all duration-300 group">
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 ${
-                  request.status === 'pending' 
-                    ? 'bg-gradient-to-br from-amber-500 to-orange-500' 
-                    : 'bg-gradient-to-br from-emerald-500 to-teal-500'
-                }`}>
-                  {request.status === 'pending' ? (
-                    <Clock className="w-6 h-6 text-white" />
-                  ) : (
-                    <CheckCircle2 className="w-6 h-6 text-white" />
-                  )}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center justify-between mb-1">
-                    <h3 className="text-sm font-bold text-slate-900">{request.company}</h3>
-                    {request.status === 'pending' && (
-                      <span className="text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
-                        En attente
-                      </span>
+          {recentVerifications.length === 0 ? (
+            <div className="text-center py-8">
+              <FileCheck className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-600">Aucune demande récente</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentVerifications.map((verification: any) => {
+                const timeAgo = new Date(verification.created_at).toLocaleDateString('fr-FR');
+                return (
+                  <div key={verification.id} className="flex items-start space-x-4 p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl hover:shadow-md transition-all duration-300 group">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300 ${
+                      verification.status === 'pending' 
+                        ? 'bg-gradient-to-br from-amber-500 to-orange-500' 
+                        : verification.status === 'approved'
+                        ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
+                        : 'bg-gradient-to-br from-red-500 to-pink-500'
+                    }`}>
+                      {verification.status === 'pending' ? (
+                        <Clock className="w-6 h-6 text-white" />
+                      ) : verification.status === 'approved' ? (
+                        <CheckCircle2 className="w-6 h-6 text-white" />
+                      ) : (
+                        <XCircle className="w-6 h-6 text-white" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="text-sm font-bold text-slate-900">{verification.company?.name || 'Entreprise'}</h3>
+                        {verification.status === 'pending' && (
+                          <span className="text-xs font-semibold text-amber-600 bg-amber-100 px-2 py-1 rounded-full">
+                            En attente
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-600 mb-2">Demande de vérification</p>
+                      <div className="flex items-center space-x-4 text-xs text-slate-500">
+                        <div className="flex items-center space-x-1">
+                          <FileText className="w-3 h-3" />
+                          <span>{verification.documents_count || 0} documents</span>
+                        </div>
+                        <div className="flex items-center space-x-1">
+                          <Calendar className="w-3 h-3" />
+                          <span>{timeAgo}</span>
+                        </div>
+                      </div>
+                    </div>
+                    {verification.status === 'pending' && (
+                      <Link
+                        to="/verificateur/pending"
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
+                      >
+                        Examiner
+                      </Link>
                     )}
                   </div>
-                  <p className="text-sm text-slate-600 mb-2">{request.type}</p>
-                  <div className="flex items-center space-x-4 text-xs text-slate-500">
-                    <div className="flex items-center space-x-1">
-                      <FileText className="w-3 h-3" />
-                      <span>{request.documents} documents</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Calendar className="w-3 h-3" />
-                      <span>{request.date}</span>
-                    </div>
-                  </div>
-                </div>
-                {request.status === 'pending' && (
-                  <Link
-                    to="/verificateur/pending"
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-sm font-semibold transition-colors"
-                  >
-                    Examiner
-                  </Link>
-                )}
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
 
         {/* Actions Rapides */}
@@ -228,7 +261,7 @@ function Overview() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-amber-900">Traiter les demandes</h3>
-                  <p className="text-xs text-amber-700">5 en attente</p>
+                  <p className="text-xs text-amber-700">{stats.pending} en attente</p>
                 </div>
               </div>
             </Link>
@@ -243,7 +276,7 @@ function Overview() {
                 </div>
                 <div className="flex-1">
                   <h3 className="font-bold text-blue-900">Voir l'historique</h3>
-                  <p className="text-xs text-blue-700">24 vérifications</p>
+                  <p className="text-xs text-blue-700">{stats.total} vérifications</p>
                 </div>
               </div>
             </Link>
@@ -268,20 +301,20 @@ function Overview() {
           <div className="mt-6 p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-200 rounded-2xl">
             <div className="flex items-center space-x-3 mb-3">
               <Award className="w-6 h-6 text-emerald-600" />
-              <h3 className="font-bold text-emerald-900">Performance du mois</h3>
+              <h3 className="font-bold text-emerald-900">Performance</h3>
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-emerald-700">Vérifications</span>
-                <span className="font-bold text-emerald-900">24</span>
+                <span className="font-bold text-emerald-900">{stats.total}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-emerald-700">Taux d'approbation</span>
-                <span className="font-bold text-emerald-900">95%</span>
+                <span className="font-bold text-emerald-900">{stats.approvalRate}%</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-emerald-700">Temps moyen</span>
-                <span className="font-bold text-emerald-900">2.5h</span>
+                <span className="text-emerald-700">En attente</span>
+                <span className="font-bold text-emerald-900">{stats.pending}</span>
               </div>
             </div>
           </div>

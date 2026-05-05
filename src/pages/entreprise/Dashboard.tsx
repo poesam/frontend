@@ -1,11 +1,12 @@
+import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { companyService, transactionService } from '../../services/api';
 import { 
   LayoutDashboard, Building2, QrCode, FileText, AlertCircle, 
   LogOut, Menu, X, TrendingUp, ShoppingBag, MessageSquare,
   Sparkles
 } from 'lucide-react';
-import { useState } from 'react';
 import NotificationBell from '../../components/NotificationBell';
 
 // Import des pages
@@ -20,6 +21,62 @@ import RiskCheckPage from './RiskCheckPage';
 // Pages du dashboard entreprise
 function Overview() {
   const { user } = useAuth();
+  const [stats, setStats] = useState<any>(null);
+  const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [companyId, setCompanyId] = useState<number | null>(null);
+
+  useEffect(() => {
+    loadData();
+  }, []);
+
+  const loadData = async () => {
+    try {
+      setLoading(true);
+      
+      // Récupérer l'entreprise de l'utilisateur
+      const companiesResponse = await companyService.getAll();
+      const companies = companiesResponse.data.data?.data || companiesResponse.data.data || [];
+      const myCompany = companies.find((c: any) => c.user_id === user?.id);
+      
+      if (myCompany) {
+        setCompanyId(myCompany.id);
+        
+        // Charger les stats de l'entreprise
+        const statsResponse = await companyService.getStats(myCompany.id);
+        setStats(statsResponse.data.data || statsResponse.data || {});
+      }
+      
+      // Charger les transactions récentes
+      const transactionsResponse = await transactionService.getAll();
+      let transactionsData;
+      if (transactionsResponse.data.data?.data) {
+        transactionsData = transactionsResponse.data.data.data;
+      } else if (transactionsResponse.data.data) {
+        transactionsData = transactionsResponse.data.data;
+      } else {
+        transactionsData = transactionsResponse.data;
+      }
+      
+      const transactions = Array.isArray(transactionsData) ? transactionsData : [];
+      setRecentTransactions(transactions.slice(0, 3));
+    } catch (error) {
+      console.error('Erreur chargement données:', error);
+      setStats({});
+      setRecentTransactions([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div className="glass p-12 rounded-2xl text-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-blue-600 mx-auto mb-4"></div>
+        <p className="text-slate-600">Chargement...</p>
+      </div>
+    );
+  }
   
   return (
     <div className="space-y-8">
@@ -54,15 +111,19 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <TrendingUp className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">+5</span>
-            </div>
+            {stats?.trust_score > 80 && (
+              <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-sm font-bold">Excellent</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Score de Confiance</p>
-            <p className="text-4xl font-bold text-slate-900">85</p>
-            <p className="text-sm text-slate-500">Excellent niveau</p>
+            <p className="text-4xl font-bold text-slate-900">{stats?.trust_score || 0}</p>
+            <p className="text-sm text-slate-500">
+              {stats?.trust_score >= 80 ? 'Excellent niveau' : stats?.trust_score >= 60 ? 'Bon niveau' : 'À améliorer'}
+            </p>
           </div>
         </div>
 
@@ -72,15 +133,17 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <ShoppingBag className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">+8</span>
-            </div>
+            {stats?.transactions?.total > 0 && (
+              <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-sm font-bold">+{stats.transactions.total}</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Transactions</p>
-            <p className="text-4xl font-bold text-slate-900">12</p>
-            <p className="text-sm text-slate-500">Ce mois-ci</p>
+            <p className="text-4xl font-bold text-slate-900">{stats?.transactions?.total || 0}</p>
+            <p className="text-sm text-slate-500">Total</p>
           </div>
         </div>
 
@@ -90,14 +153,16 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <FileText className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-              <AlertCircle className="w-4 h-4" />
-              <span className="text-sm font-bold">OK</span>
-            </div>
+            {stats?.verifications?.approved > 0 && (
+              <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <AlertCircle className="w-4 h-4" />
+                <span className="text-sm font-bold">OK</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Vérifications</p>
-            <p className="text-4xl font-bold text-slate-900">3</p>
+            <p className="text-4xl font-bold text-slate-900">{stats?.verifications?.approved || 0}</p>
             <p className="text-sm text-slate-500">Approuvées</p>
           </div>
         </div>
@@ -108,14 +173,16 @@ function Overview() {
             <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-teal-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
               <MessageSquare className="w-7 h-7 text-white" />
             </div>
-            <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
-              <TrendingUp className="w-4 h-4" />
-              <span className="text-sm font-bold">0</span>
-            </div>
+            {stats?.disputes?.open === 0 && (
+              <div className="flex items-center space-x-1 text-emerald-600 bg-emerald-50 px-3 py-1 rounded-full">
+                <TrendingUp className="w-4 h-4" />
+                <span className="text-sm font-bold">0</span>
+              </div>
+            )}
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Litiges</p>
-            <p className="text-4xl font-bold text-slate-900">0</p>
+            <p className="text-4xl font-bold text-slate-900">{stats?.disputes?.open || 0}</p>
             <p className="text-sm text-slate-500">En cours</p>
           </div>
         </div>
@@ -138,11 +205,20 @@ function Overview() {
             </div>
             <div className="space-y-2">
               <p className="text-sm font-semibold text-slate-600">Code TrustPass</p>
-              <p className="text-2xl font-bold text-blue-600">TP-2024-001</p>
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
-                <AlertCircle className="w-4 h-4" />
-                <span>Vérifié</span>
-              </div>
+              <p className="text-2xl font-bold text-blue-600">
+                {companyId ? `TP-${new Date().getFullYear()}-${String(companyId).padStart(3, '0')}` : 'TP-XXXX-XXX'}
+              </p>
+              {stats?.verifications?.approved > 0 ? (
+                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>Vérifié</span>
+                </div>
+              ) : (
+                <div className="inline-flex items-center space-x-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">
+                  <AlertCircle className="w-4 h-4" />
+                  <span>En attente</span>
+                </div>
+              )}
             </div>
           </div>
 
@@ -167,57 +243,49 @@ function Overview() {
             </Link>
           </div>
 
-          <div className="space-y-4">
-            {[
-              {
-                id: 1,
-                description: 'Vente de produits électroniques',
-                amount: 45000,
-                status: 'completed',
-                date: 'Il y a 2h',
-              },
-              {
-                id: 2,
-                description: 'Service de livraison',
-                amount: 15000,
-                status: 'pending',
-                date: 'Il y a 5h',
-              },
-              {
-                id: 3,
-                description: 'Achat de fournitures',
-                amount: 28000,
-                status: 'completed',
-                date: 'Il y a 1 jour',
-              },
-            ].map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl hover:shadow-md transition-all duration-300">
-                <div className="flex items-center space-x-4">
-                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
-                    transaction.status === 'completed'
-                      ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
-                      : 'bg-gradient-to-br from-amber-500 to-orange-500'
-                  }`}>
-                    <ShoppingBag className="w-6 h-6 text-white" />
+          {recentTransactions.length === 0 ? (
+            <div className="text-center py-8">
+              <ShoppingBag className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-600">Aucune transaction récente</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {recentTransactions.map((transaction: any) => {
+                const timeAgo = new Date(transaction.created_at).toLocaleDateString('fr-FR');
+                return (
+                  <div key={transaction.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-slate-50 to-blue-50 rounded-2xl hover:shadow-md transition-all duration-300">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-lg ${
+                        transaction.status === 'delivered'
+                          ? 'bg-gradient-to-br from-emerald-500 to-teal-500'
+                          : transaction.status === 'paid'
+                          ? 'bg-gradient-to-br from-blue-500 to-cyan-500'
+                          : 'bg-gradient-to-br from-amber-500 to-orange-500'
+                      }`}>
+                        <ShoppingBag className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-slate-900">{transaction.description}</p>
+                        <p className="text-xs text-slate-500">{timeAgo}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-slate-900">{transaction.amount.toLocaleString()} XOF</p>
+                      <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
+                        transaction.status === 'delivered'
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : transaction.status === 'paid'
+                          ? 'bg-blue-100 text-blue-700'
+                          : 'bg-amber-100 text-amber-700'
+                      }`}>
+                        {transaction.status === 'delivered' ? 'Livrée' : transaction.status === 'paid' ? 'Payée' : 'En attente'}
+                      </span>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-semibold text-slate-900">{transaction.description}</p>
-                    <p className="text-xs text-slate-500">{transaction.date}</p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-lg font-bold text-slate-900">{transaction.amount.toLocaleString()} XOF</p>
-                  <span className={`text-xs font-semibold px-2 py-1 rounded-full ${
-                    transaction.status === 'completed'
-                      ? 'bg-emerald-100 text-emerald-700'
-                      : 'bg-amber-100 text-amber-700'
-                  }`}>
-                    {transaction.status === 'completed' ? 'Complétée' : 'En attente'}
-                  </span>
-                </div>
-              </div>
-            ))}
-          </div>
+                );
+              })}
+            </div>
+          )}
         </div>
       </div>
 

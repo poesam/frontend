@@ -27,46 +27,21 @@ export default function UsersPage() {
   const loadUsers = async () => {
     try {
       setLoading(true);
-      // Simuler des données pour le moment
-      const mockUsers: User[] = [
-        {
-          id: 1,
-          name: 'Admin Principal',
-          email: 'admin@trustrail.com',
-          role: 'admin',
-          created_at: '2024-01-15T10:00:00Z',
-        },
-        {
-          id: 2,
-          name: 'Vérificateur Expert',
-          email: 'verificateur@trustrail.com',
-          role: 'verificateur',
-          created_at: '2024-01-20T14:30:00Z',
-        },
-        {
-          id: 3,
-          name: 'TechCorp Solutions',
-          email: 'tech@example.com',
-          role: 'entreprise',
-          created_at: '2024-02-01T09:15:00Z',
-          company: {
-            name: 'TechCorp Solutions',
-            trust_score: 85,
-          },
-        },
-        {
-          id: 4,
-          name: 'FoodDelivery Express',
-          email: 'food@example.com',
-          role: 'entreprise',
-          created_at: '2024-02-05T11:20:00Z',
-          company: {
-            name: 'FoodDelivery Express',
-            trust_score: 78,
-          },
-        },
-      ];
-      setUsers(mockUsers);
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await fetch(`${API_URL}/api/users`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Accept': 'application/json',
+        }
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        const data = result.data?.data || result.data || [];
+        setUsers(Array.isArray(data) ? data : []);
+      }
     } catch (error) {
       console.error('Erreur chargement utilisateurs:', error);
     } finally {
