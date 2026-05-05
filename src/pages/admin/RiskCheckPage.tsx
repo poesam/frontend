@@ -54,7 +54,8 @@ export default function AdminRiskCheckPage() {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/companies', {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`${API_URL}/api/companies`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -71,8 +72,9 @@ export default function AdminRiskCheckPage() {
     try {
       setLoadingChecks(true);
       const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.get(
-        `http://localhost:8000/api/risk-checks/company/${companyId}`,
+        `${API_URL}/api/risk-checks/company/${companyId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -96,8 +98,9 @@ export default function AdminRiskCheckPage() {
   const performRiskCheck = async (companyId: number) => {
     try {
       const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       await axios.post(
-        'http://localhost:8000/api/risk-checks',
+        `${API_URL}/api/risk-checks`,
         { company_id: companyId },
         { headers: { Authorization: `Bearer ${token}` } }
       );

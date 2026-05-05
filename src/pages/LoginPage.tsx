@@ -127,26 +127,6 @@ export default function LoginPage() {
               </Link>
             </p>
           </div>
-
-          {/* Comptes de test */}
-          <div className="mt-8 pt-6 border-t border-slate-200">
-            <p className="text-xs text-slate-500 text-center mb-3">Comptes de test :</p>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                <span className="text-slate-600">Admin</span>
-                <code className="text-blue-600">admin@trustrail-mea.com</code>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                <span className="text-slate-600">Vérificateur</span>
-                <code className="text-blue-600">verificateur@trustrail-mea.com</code>
-              </div>
-              <div className="flex justify-between items-center p-2 bg-slate-50 rounded-lg">
-                <span className="text-slate-600">Entreprise</span>
-                <code className="text-blue-600">awa@example.com</code>
-              </div>
-              <p className="text-center text-slate-500 mt-2">Mot de passe : <code className="text-blue-600">password123</code></p>
-            </div>
-          </div>
         </div>
 
         <div className="mt-6 text-center">

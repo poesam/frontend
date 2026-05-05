@@ -46,7 +46,8 @@ export default function TrustPassPage() {
   const loadQRCode = async (trustPassId: number) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:8000/api/trust-passes/${trustPassId}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`${API_URL}/api/trust-passes/${trustPassId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
@@ -67,8 +68,9 @@ export default function TrustPassPage() {
     try {
       setGeneratingQR(true);
       const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.post(
-        `http://localhost:8000/api/trust-passes/${company.trust_pass.id}/generate-qr`,
+        `${API_URL}/api/trust-passes/${company.trust_pass.id}/generate-qr`,
         {},
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -101,8 +103,9 @@ export default function TrustPassPage() {
 
     try {
       const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.get(
-        `http://localhost:8000/api/trust-passes/${company.trust_pass.id}/download-qr`,
+        `${API_URL}/api/trust-passes/${company.trust_pass.id}/download-qr`,
         {
           headers: { Authorization: `Bearer ${token}` },
           responseType: 'blob'

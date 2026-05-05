@@ -51,7 +51,8 @@ const ReceiptPage: React.FC = () => {
   const fetchTransaction = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get(`http://localhost:8000/api/transactions/${id}`, {
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`${API_URL}/api/transactions/${id}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
 
@@ -67,8 +68,9 @@ const ReceiptPage: React.FC = () => {
 
   const handleDownloadPDF = () => {
     const token = localStorage.getItem('token');
+    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
     window.open(
-      `http://localhost:8000/api/transactions/${id}/receipt/download?token=${token}`,
+      `${API_URL}/api/transactions/${id}/receipt/download?token=${token}`,
       '_blank'
     );
   };

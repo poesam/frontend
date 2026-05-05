@@ -88,8 +88,9 @@ export default function VerificationsPage() {
   const loadVerificationHistory = async (companyId: number) => {
     try {
       const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.get(
-        `http://localhost:8000/api/companies/${companyId}`,
+        `${API_URL}/api/companies/${companyId}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       

@@ -1,5 +1,5 @@
 import React from 'react';
-import { CheckCircle, XCircle, AlertTriangle, AlertCircle, Trash2, Check } from 'lucide-react';
+import { Trash2, Check } from 'lucide-react';
 import type { Notification } from '../services/notificationService';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -16,22 +16,6 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
   onDelete,
 }) => {
   const isUnread = !notification.read_at;
-
-  // Icône selon le type
-  const getIcon = () => {
-    switch (notification.type) {
-      case 'verification_approved':
-        return <CheckCircle className="w-5 h-5 text-green-500" />;
-      case 'verification_rejected':
-        return <XCircle className="w-5 h-5 text-red-500" />;
-      case 'risk_alert':
-        return <AlertTriangle className="w-5 h-5 text-orange-500" />;
-      case 'dispute_opened':
-        return <AlertCircle className="w-5 h-5 text-red-500" />;
-      default:
-        return <AlertCircle className="w-5 h-5 text-gray-500" />;
-    }
-  };
 
   // Couleur de fond selon le type
   const getBgColor = () => {
@@ -70,11 +54,6 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       }`}
     >
       <div className="flex items-start gap-3">
-        {/* Icon */}
-        <div className="flex-shrink-0 mt-0.5">
-          {getIcon()}
-        </div>
-
         {/* Content */}
         <div className="flex-1 min-w-0">
           <div className="flex items-start justify-between gap-2">

@@ -1,6 +1,7 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8000/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+const API_BASE = `${API_URL}/api`;
 
 export interface DashboardStats {
   companies: {
@@ -70,7 +71,7 @@ const dashboardService = {
   // Obtenir les statistiques globales
   getStats: async (): Promise<DashboardStats> => {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/dashboard/stats`, {
+    const response = await axios.get(`${API_BASE}/dashboard/stats`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data.data;
@@ -79,7 +80,7 @@ const dashboardService = {
   // Obtenir les activités récentes
   getRecentActivities: async (limit: number = 20): Promise<Activity[]> => {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/dashboard/recent-activities`, {
+    const response = await axios.get(`${API_BASE}/dashboard/recent-activities`, {
       params: { limit },
       headers: { Authorization: `Bearer ${token}` }
     });
@@ -89,7 +90,7 @@ const dashboardService = {
   // Obtenir les alertes
   getAlerts: async (): Promise<{ alerts: Alert[]; total: number }> => {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/dashboard/alerts`, {
+    const response = await axios.get(`${API_BASE}/dashboard/alerts`, {
       headers: { Authorization: `Bearer ${token}` }
     });
     return response.data.data;
@@ -98,7 +99,7 @@ const dashboardService = {
   // Obtenir les vérifications en attente
   getPendingVerifications: async (page: number = 1, perPage: number = 15) => {
     const token = localStorage.getItem('token');
-    const response = await axios.get(`${API_URL}/dashboard/pending-verifications`, {
+    const response = await axios.get(`${API_BASE}/dashboard/pending-verifications`, {
       params: { page, per_page: perPage },
       headers: { Authorization: `Bearer ${token}` }
     });

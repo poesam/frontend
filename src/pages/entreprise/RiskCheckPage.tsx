@@ -70,8 +70,9 @@ export default function RiskCheckPage() {
     try {
       setChecking(true);
       const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await axios.post(
-        'http://localhost:8000/api/risk-checks',
+        `${API_URL}/api/risk-checks`,
         { company_id: companyId },
         { headers: { Authorization: `Bearer ${token}` } }
       );

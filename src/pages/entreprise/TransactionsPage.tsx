@@ -327,7 +327,8 @@ export default function TransactionsPage() {
                         <button 
                           onClick={() => {
                             const token = localStorage.getItem('token');
-                            window.open(`http://localhost:8000/api/transactions/${transaction.id}/receipt/download?token=${token}`, '_blank');
+                            const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+                            window.open(`${API_URL}/api/transactions/${transaction.id}/receipt/download?token=${token}`, '_blank');
                           }}
                           className="p-2 hover:bg-slate-100 rounded-lg transition-colors" 
                           title="Télécharger reçu PDF"
