@@ -31,7 +31,15 @@ export default function TransactionsPage() {
     try {
       setLoading(true);
       const response = await transactionService.getAll();
-      const data = response.data.data || response.data || [];
+      // La réponse est paginée: response.data.data.data contient le tableau
+      let data;
+      if (response.data.data?.data) {
+        data = response.data.data.data; // Pagination Laravel
+      } else if (response.data.data) {
+        data = response.data.data;
+      } else {
+        data = response.data;
+      }
       setTransactions(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Erreur chargement transactions:', error);
