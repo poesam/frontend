@@ -100,9 +100,9 @@ export default function TrustPassSimple() {
         <div className="lg:col-span-1">
           <div className="glass p-8 rounded-3xl card-hover text-center">
             <div className="mb-6">
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold mb-4">
+              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold mb-4">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Vérifié</span>
+                <span>En attente de vérification</span>
               </div>
             </div>
 
@@ -155,7 +155,7 @@ export default function TrustPassSimple() {
                 </button>
               </div>
               <p className="text-xs text-slate-500">
-                Créé le {new Date(company.created_at).toLocaleDateString('fr-FR')}
+                Créé le {new Date().toLocaleDateString('fr-FR')}
               </p>
             </div>
 
@@ -188,9 +188,25 @@ export default function TrustPassSimple() {
                 <TrendingUp className="w-6 h-6 text-blue-600" />
                 <span>Score de Confiance</span>
               </h2>
-              <div className="flex items-center space-x-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
+              <div className="flex items-center space-x-2 px-4 py-2 bg-amber-100 text-amber-700 rounded-full text-sm font-semibold">
                 <TrendingUp className="w-4 h-4" />
-                <span>+5 ce mois</span>
+                <span>Nouveau prestataire</span>
+              </div>
+            </div>
+
+            {/* Message d'explication pour nouveau prestataire */}
+            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+              <div className="flex items-start space-x-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <TrendingUp className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-semibold text-blue-900 mb-1">Comment améliorer votre score</h4>
+                  <p className="text-xs text-blue-700">
+                    Votre score augmentera automatiquement en complétant des transactions, 
+                    en obtenant des vérifications et en maintenant une bonne réputation.
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -204,26 +220,26 @@ export default function TrustPassSimple() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-600">Transactions</span>
-                  <span className="text-sm font-bold text-slate-900">+{company.stats.transactions.completed * 3} points</span>
+                  <span className="text-sm font-bold text-slate-900">+0 points</span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-600 h-2 rounded-full" style={{ width: `${Math.min(100, company.stats.transactions.completed * 15)}%` }}></div>
+                  <div className="bg-gradient-to-r from-blue-600 to-cyan-600 h-2 rounded-full" style={{ width: '0%' }}></div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-600">Vérifications</span>
-                  <span className="text-sm font-bold text-slate-900">+{company.stats.verifications.approved * 5} points</span>
+                  <span className="text-sm font-bold text-slate-900">+0 points</span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-cyan-600 to-blue-600 h-2 rounded-full" style={{ width: `${Math.min(100, company.stats.verifications.approved * 25)}%` }}></div>
+                  <div className="bg-gradient-to-r from-cyan-600 to-blue-600 h-2 rounded-full" style={{ width: '0%' }}></div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-600">Réputation</span>
-                  <span className="text-sm font-bold text-slate-900">+30 points</span>
+                  <span className="text-sm font-bold text-slate-900">+25 points</span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-indigo-600 to-blue-600 h-2 rounded-full" style={{ width: '85%' }}></div>
+                  <div className="bg-gradient-to-r from-indigo-600 to-blue-600 h-2 rounded-full" style={{ width: '25%' }}></div>
                 </div>
               </div>
             </div>

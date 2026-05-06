@@ -60,7 +60,7 @@ const isPositionMarker = (row: number, col: number, size: number): boolean => {
   );
 };
 
-// Données réelles de test
+// Données réelles de test pour un nouveau prestataire
 export const getRealCompanyData = () => {
   return {
     id: 6,
@@ -68,17 +68,17 @@ export const getRealCompanyData = () => {
     commercial_name: 'Express Services',
     business_type: 'livreur',
     city: 'Dakar',
-    trust_score: 85,
-    verification_status: 'verifie',
+    trust_score: 25, // Score réaliste pour un nouveau prestataire
+    verification_status: 'en_attente', // Pas encore vérifié
     phone: '+221 77 123 45 67',
     address: '123 Avenue Bourguiba, Dakar',
-    created_at: '2024-01-15',
+    created_at: new Date().toISOString().split('T')[0], // Créé aujourd'hui
     stats: {
-      transactions: { total: 8, completed: 6, pending: 2 },
-      verifications: { total: 3, approved: 2, pending: 1 },
-      trustpass: { views: 45, views_this_month: 12 },
-      disputes: { total: 0, open: 0 },
-      risk_checks: { total: 2, this_month: 1 }
+      transactions: { total: 0, completed: 0, pending: 0 }, // Aucune transaction encore
+      verifications: { total: 0, approved: 0, pending: 0 }, // Aucune vérification
+      trustpass: { views: 0, views_this_month: 0 }, // Aucune vue encore
+      disputes: { total: 0, open: 0 }, // Aucun litige
+      risk_checks: { total: 0, this_month: 0 } // Aucun contrôle de risque
     }
   };
 };
