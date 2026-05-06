@@ -23,27 +23,49 @@ export default function TrustPassPage() {
   const loadCompanyData = async () => {
     try {
       setLoading(true);
-      const response = await companyService.getAll();
       
-      // L'API retourne une structure paginée : response.data.data.data
-      const data = response.data.data?.data || response.data.data || response.data || [];
+      // Utiliser la nouvelle API pour récupérer l'entreprise de l'utilisateur connecté
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.get(`${API_URL}/api/companies/my-company`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
       
-      // Chercher l'entreprise de l'utilisateur connecté
-      const myCompany = Array.isArray(data) ? data.find((c: any) => c.user_id === user?.id) : null;
-      
-      setCompany(myCompany);
+      if (response.data.success) {
+        const myCompany = response.data.data;
+        setCompany(myCompany);
 
-      // Charger le QR code s'il existe
-      if (myCompany?.trust_pass?.id) {
-        await loadQRCode(myCompany.trust_pass.id);
-      }
+        // Charger le QR code s'il existe
+        if (myCompany?.trust_pass?.id) {
+          await loadQRCode(myCompany.trust_pass.id);
+        }
 
-      // Charger les statistiques réelles
-      if (myCompany?.id) {
-        await loadStats(myCompany.id);
+        // Charger les statistiques réelles
+        if (myCompany?.id) {
+          await loadStats(myCompany.id);
+        }
       }
     } catch (error) {
       console.error('Erreur chargement entreprise:', error);
+      
+      // Fallback: essayer l'ancienne méthode
+      try {
+        const response = await companyService.getAll();
+        const data = response.data.data?.data || response.data.data || response.data || [];
+        const myCompany = Array.isArray(data) ? data.find((c: any) => c.user_id === user?.id) : null;
+        
+        setCompany(myCompany);
+
+        if (myCompany?.trust_pass?.id) {
+          await loadQRCode(myCompany.trust_pass.id);
+        }
+
+        if (myCompany?.id) {
+          await loadStats(myCompany.id);
+        }
+      } catch (fallbackError) {
+        console.error('Erreur fallback:', fallbackError);
+      }
     } finally {
       setLoading(false);
     }
