@@ -9,6 +9,7 @@ import {
 export default function ProfilePage() {
   const { user } = useAuth();
   const [company, setCompany] = useState<any>(null);
+  const [stats, setStats] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [formData, setFormData] = useState({
@@ -32,6 +33,10 @@ export default function ProfilePage() {
   const loadCompanyData = async () => {
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+
+      // Charger les données de l'entreprise
       const response = await companyService.getAll();
       
       // L'API retourne une structure paginée : response.data.data.data
@@ -40,6 +45,7 @@ export default function ProfilePage() {
       const myCompany = Array.isArray(data) ? data.find((c: any) => c.user_id === user?.id) : null;
       
       setCompany(myCompany);
+      
       if (myCompany) {
         setFormData({
           commercial_name: myCompany.commercial_name || '',
@@ -54,6 +60,28 @@ export default function ProfilePage() {
           instagram: myCompany.instagram || '',
           description: myCompany.description || '',
         });
+
+        // Charger les statistiques réelles
+        try {
+          const statsResponse = await fetch(`${API_URL}/api/companies/${myCompany.id}/stats`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (statsResponse.ok) {
+            const statsData = await statsResponse.json();
+            if (statsData.success) {
+              setStats(statsData.data);
+            }
+          }
+        } catch (statsError) {
+          console.error('Erreur chargement stats:', statsError);
+          // Utiliser des stats par défaut
+          setStats({
+            transactions: { total: 0 },
+            verifications: { approved: 0 },
+            disputes: { open: 0 }
+          });
+        }
       }
     } catch (error) {
       console.error('Erreur chargement entreprise:', error);
@@ -143,16 +171,20 @@ export default function ProfilePage() {
         <div className="lg:col-span-1">
           <div className="glass p-8 rounded-3xl card-hover text-center">
             <div className="mb-6">
-              <div className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold mb-4">
+              <div className={`inline-flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-semibold mb-4 ${
+                company.verification_status === 'verifie' 
+                  ? 'bg-emerald-100 text-emerald-700'
+                  : 'bg-amber-100 text-amber-700'
+              }`}>
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Vérifié</span>
+                <span>{company.verification_status === 'verifie' ? 'Vérifié' : 'En attente de vérification'}</span>
               </div>
             </div>
 
             {/* Score */}
             <div className="w-48 h-48 mx-auto bg-gradient-to-br from-blue-100 to-cyan-100 rounded-full flex items-center justify-center mb-6 shadow-xl">
               <div className="text-center">
-                <div className="text-6xl font-bold text-blue-600 mb-2">{company.trust_score || 85}</div>
+                <div className="text-6xl font-bold text-blue-600 mb-2">{company.trust_score || 25}</div>
                 <p className="text-sm font-semibold text-slate-600">Score de Confiance</p>
               </div>
             </div>
@@ -160,13 +192,32 @@ export default function ProfilePage() {
             <div className="space-y-3 mb-6">
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
                 <span className="text-sm font-semibold text-slate-600">Niveau</span>
-                <span className="text-sm font-bold text-emerald-600">Excellent</span>
+                <span className={`text-sm font-bold ${
+                  (company.trust_score || 25) >= 80 ? 'text-emerald-600' :
+                  (company.trust_score || 25) >= 50 ? 'text-blue-600' :
+                  'text-amber-600'
+                }`}>
+                  {(company.trust_score || 25) >= 80 ? 'Excellent' :
+                   (company.trust_score || 25) >= 50 ? 'Bon' :
+                   'En construction'}
+                </span>
               </div>
               <div className="flex items-center justify-between p-3 bg-slate-50 rounded-xl">
-                <span className="text-sm font-semibold text-slate-600">Progression</span>
-                <span className="text-sm font-bold text-blue-600 flex items-center space-x-1">
-                  <TrendingUp className="w-4 h-4" />
-                  <span>+5 ce mois</span>
+                <span className="text-sm font-semibold text-slate-600">Statut</span>
+                <span className={`text-sm font-bold flex items-center space-x-1 ${
+                  company.verification_status === 'verifie' ? 'text-emerald-600' : 'text-amber-600'
+                }`}>
+                  {company.verification_status === 'verifie' ? (
+                    <>
+                      <CheckCircle2 className="w-4 h-4" />
+                      <span>Vérifié</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertCircle className="w-4 h-4" />
+                      <span>En attente</span>
+                    </>
+                  )}
                 </span>
               </div>
             </div>
@@ -468,19 +519,25 @@ export default function ProfilePage() {
 
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl text-center">
-                <div className="text-3xl font-bold text-blue-600 mb-2">12</div>
+                <div className="text-3xl font-bold text-blue-600 mb-2">
+                  {stats?.transactions?.total || 0}
+                </div>
                 <p className="text-sm font-semibold text-slate-600">Transactions</p>
-                <p className="text-xs text-slate-500 mt-1">Ce mois-ci</p>
+                <p className="text-xs text-slate-500 mt-1">Total</p>
               </div>
 
               <div className="p-6 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl text-center">
-                <div className="text-3xl font-bold text-cyan-600 mb-2">3</div>
+                <div className="text-3xl font-bold text-cyan-600 mb-2">
+                  {stats?.verifications?.approved || 0}
+                </div>
                 <p className="text-sm font-semibold text-slate-600">Vérifications</p>
                 <p className="text-xs text-slate-500 mt-1">Approuvées</p>
               </div>
 
               <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl text-center">
-                <div className="text-3xl font-bold text-indigo-600 mb-2">0</div>
+                <div className="text-3xl font-bold text-indigo-600 mb-2">
+                  {stats?.disputes?.open || 0}
+                </div>
                 <p className="text-sm font-semibold text-slate-600">Litiges</p>
                 <p className="text-xs text-slate-500 mt-1">En cours</p>
               </div>
