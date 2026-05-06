@@ -54,20 +54,26 @@ export default function VerificationsPage() {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       
+      console.log('🔍 Récupération de l\'entreprise...');
       const companyResponse = await fetch(`${API_URL}/api/companies/my-company`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (!companyResponse.ok) {
+        const errorText = await companyResponse.text();
+        console.error('❌ Erreur récupération entreprise:', errorText);
         throw new Error('Impossible de récupérer les informations de l\'entreprise');
       }
       
       const companyData = await companyResponse.json();
+      console.log('✅ Entreprise récupérée:', companyData);
+      
       if (!companyData.success) {
         throw new Error('Entreprise non trouvée');
       }
       
       const companyId = companyData.data.id;
+      console.log('🏢 Company ID:', companyId);
       
       // Créer la demande de vérification
       const verificationData = {
@@ -76,7 +82,10 @@ export default function VerificationsPage() {
         additional_info: 'Demande soumise via l\'interface utilisateur'
       };
       
+      console.log('📤 Données envoyées:', verificationData);
+      
       const response = await verificationService.create(verificationData);
+      console.log('📥 Réponse reçue:', response);
       
       if (response.data.success) {
         alert('Demande de vérification soumise avec succès !');
@@ -87,8 +96,9 @@ export default function VerificationsPage() {
         throw new Error(response.data.message || 'Erreur lors de la soumission');
       }
     } catch (error: any) {
-      console.error('Erreur soumission vérification:', error);
-      alert(`Erreur: ${error.message || 'Erreur lors de la soumission'}`);
+      console.error('❌ Erreur soumission vérification:', error);
+      console.error('❌ Détails erreur:', error.response?.data);
+      alert(`Erreur: ${error.response?.data?.message || error.message || 'Erreur lors de la soumission'}\n\nDétails: ${JSON.stringify(error.response?.data?.errors || {})}`);
     }
   };
 
