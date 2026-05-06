@@ -4,30 +4,30 @@ import Pusher from 'pusher-js';
 // Make Pusher available globally for Laravel Echo
 (window as any).Pusher = Pusher;
 
-// Configuration Echo pour WebSocket - Désactivé si pas de clé Pusher
+// Configuration Echo pour Laravel Reverb
 let echo: Echo | null = null;
 
-const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
+const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
+const reverbHost = import.meta.env.VITE_REVERB_HOST;
+const reverbPort = import.meta.env.VITE_REVERB_PORT;
+const reverbScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
 
-if (pusherKey && pusherKey !== 'YOUR_PUSHER_APP_KEY' && pusherKey !== '') {
+if (reverbKey && reverbHost) {
   echo = new Echo({
-    broadcaster: 'pusher',
-    key: pusherKey,
-    wsHost: import.meta.env.VITE_PUSHER_HOST || '127.0.0.1',
-    wsPort: import.meta.env.VITE_PUSHER_PORT || 6001,
-    wssPort: import.meta.env.VITE_PUSHER_PORT || 6001,
-    forceTLS: import.meta.env.VITE_PUSHER_SCHEME === 'https',
-    encrypted: import.meta.env.VITE_PUSHER_SCHEME === 'https',
-    disableStats: true,
+    broadcaster: 'reverb',
+    key: reverbKey,
+    wsHost: reverbHost,
+    wsPort: reverbPort || 8080,
+    wssPort: reverbPort || 8080,
+    forceTLS: reverbScheme === 'https',
     enabledTransports: ['ws', 'wss'],
-    cluster: import.meta.env.VITE_PUSHER_APP_CLUSTER || 'mt1',
+    disableStats: true,
   });
 
-  console.log('📡 Echo WebSocket activé');
-  console.log('🔗 Connexion:', `${import.meta.env.VITE_PUSHER_SCHEME || 'ws'}://${import.meta.env.VITE_PUSHER_HOST || '127.0.0.1'}:${import.meta.env.VITE_PUSHER_PORT || 6001}`);
+  console.log('📡 Laravel Reverb WebSocket activé');
+  console.log(`🔗 Connexion: ${reverbScheme}://${reverbHost}:${reverbPort}`);
 } else {
-  console.log('📡 WebSocket désactivé (pas de clé Pusher configurée)');
+  console.log('📡 WebSocket désactivé (Reverb non configuré)');
 }
 
 export default echo;
-
