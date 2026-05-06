@@ -56,11 +56,25 @@ export default function VerificationsPage() {
           const response = await verificationService.getAll({ company_id: companyId });
           console.log('📋 Réponse vérifications:', response.data);
           
-          const data = response.data.data || response.data || [];
-          console.log('✅ Vérifications chargées:', data);
-          console.log('📊 Nombre de vérifications:', Array.isArray(data) ? data.length : 0);
+          // L'API retourne une réponse paginée : { data: { data: [...], total: X, ... } }
+          // Il faut extraire le tableau 'data' de l'objet de pagination
+          let verificationsData = [];
           
-          setVerifications(Array.isArray(data) ? data : []);
+          if (response.data.data && Array.isArray(response.data.data.data)) {
+            // Cas 1: response.data.data.data (pagination Laravel)
+            verificationsData = response.data.data.data;
+          } else if (response.data.data && Array.isArray(response.data.data)) {
+            // Cas 2: response.data.data (tableau direct)
+            verificationsData = response.data.data;
+          } else if (Array.isArray(response.data)) {
+            // Cas 3: response.data (tableau direct)
+            verificationsData = response.data;
+          }
+          
+          console.log('✅ Vérifications extraites:', verificationsData);
+          console.log('📊 Nombre de vérifications:', verificationsData.length);
+          
+          setVerifications(verificationsData);
         } else {
           console.warn('⚠️ Pas de données entreprise');
           setVerifications([]);
