@@ -467,8 +467,8 @@ export default function VerificationsPage() {
 
       {/* Modal de confirmation d'action */}
       {showModal && selectedVerification && actionType && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="glass max-w-2xl w-full rounded-3xl p-8 shadow-2xl">
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm overflow-y-auto">
+          <div className="glass max-w-2xl w-full rounded-3xl p-8 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-slate-900 mb-6 flex items-center space-x-3">
               {actionType === 'approve' ? (
                 <>
