@@ -91,18 +91,52 @@ export default function TrustPassPage() {
     try {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      // D'abord essayer de récupérer le QR code existant
       const response = await axios.get(`${API_URL}/api/trust-passes/${trustPassId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data.success && response.data.data.qr_code_url) {
-        setQrCodeData({
-          url: response.data.data.qr_code_url,
-          publicUrl: response.data.data.public_url
-        });
+      if (response.data.success) {
+        const trustPass = response.data.data;
+        
+        // Si le QR code existe déjà, l'utiliser
+        if (trustPass.qr_code_url) {
+          setQrCodeData({
+            url: trustPass.qr_code_url,
+            publicUrl: trustPass.public_url
+          });
+        } else {
+          // Sinon, générer automatiquement le QR code
+          await generateQRCodeAutomatically(trustPassId);
+        }
       }
     } catch (error) {
       console.error('Erreur chargement QR code:', error);
+      // En cas d'erreur, essayer de générer le QR code
+      await generateQRCodeAutomatically(trustPassId);
+    }
+  };
+
+  const generateQRCodeAutomatically = async (trustPassId: number) => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      const response = await axios.post(
+        `${API_URL}/api/trust-passes/${trustPassId}/generate-qr`,
+        {},
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      if (response.data.success) {
+        setQrCodeData({
+          url: response.data.data.qr_code_url,
+          publicUrl: response.data.data.public_url,
+          svg: response.data.data.qr_code_svg
+        });
+      }
+    } catch (error) {
+      console.error('Erreur génération automatique QR code:', error);
     }
   };
 
@@ -245,23 +279,37 @@ export default function TrustPassPage() {
               
               {/* Conteneur blanc pour le QR code */}
               <div className="absolute inset-3 bg-white rounded-2xl flex items-center justify-center p-4">
-                {qrCodeData?.url ? (
+                {qrCodeData?.url || qrCodeData?.svg ? (
                   <div className="w-full h-full flex items-center justify-center relative">
                     {/* QR Code avec style arrondi */}
-                    <div className="qr-code-container">
-                      <img 
-                        src={qrCodeData.url} 
-                        alt="QR Code TrustPass" 
-                        className="max-w-full max-h-full object-contain"
-                        style={{
-                          imageRendering: 'pixelated',
-                          filter: 'contrast(1.1)'
-                        }}
-                      />
+                    <div className="qr-code-container w-full h-full flex items-center justify-center">
+                      {qrCodeData.svg ? (
+                        // Afficher le SVG directement pour une meilleure qualité
+                        <div 
+                          className="max-w-full max-h-full"
+                          dangerouslySetInnerHTML={{ 
+                            __html: atob(qrCodeData.svg) 
+                          }}
+                          style={{
+                            filter: 'contrast(1.1)'
+                          }}
+                        />
+                      ) : (
+                        // Fallback vers l'image
+                        <img 
+                          src={qrCodeData.url} 
+                          alt="QR Code TrustPass" 
+                          className="max-w-full max-h-full object-contain"
+                          style={{
+                            imageRendering: 'pixelated',
+                            filter: 'contrast(1.1)'
+                          }}
+                        />
+                      )}
                     </div>
                     
-                    {/* Logo au centre du QR code - décalé légèrement à gauche */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ marginLeft: '-4px' }}>
+                    {/* Logo au centre du QR code */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center border-2 border-blue-500">
                         <QrCode className="w-6 h-6 text-blue-600" />
                       </div>
@@ -371,7 +419,11 @@ export default function TrustPassPage() {
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl">
-                <div className="text-6xl font-bold text-blue-600 mb-2">{company.trust_score || 85}</div>
+                <div className="text-6xl font-bold text-blue-600 mb-2">
+                  {stats ? stats.trust_score || company.trust_score || 85 : (
+                    <div className="animate-pulse bg-blue-200 h-16 w-24 mx-auto rounded"></div>
+                  )}
+                </div>
                 <p className="text-sm font-semibold text-slate-600">Score Actuel</p>
                 <p className="text-xs text-slate-500 mt-1">Sur 100</p>
               </div>
@@ -379,26 +431,41 @@ export default function TrustPassPage() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-600">Transactions</span>
-                  <span className="text-sm font-bold text-slate-900">+30 points</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {stats ? `+${Math.min(30, (stats.transactions?.completed || 0) * 3)} points` : '+30 points'}
+                  </span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-blue-600 to-cyan-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  <div 
+                    className="bg-gradient-to-r from-blue-600 to-cyan-600 h-2 rounded-full transition-all duration-1000" 
+                    style={{ width: stats ? `${Math.min(100, (stats.transactions?.completed || 0) * 10)}%` : '75%' }}
+                  ></div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-600">Vérifications</span>
-                  <span className="text-sm font-bold text-slate-900">+25 points</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {stats ? `+${Math.min(25, (stats.verifications?.approved || 0) * 5)} points` : '+25 points'}
+                  </span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-cyan-600 to-blue-600 h-2 rounded-full" style={{ width: '62%' }}></div>
+                  <div 
+                    className="bg-gradient-to-r from-cyan-600 to-blue-600 h-2 rounded-full transition-all duration-1000" 
+                    style={{ width: stats ? `${Math.min(100, (stats.verifications?.approved || 0) * 20)}%` : '62%' }}
+                  ></div>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold text-slate-600">Réputation</span>
-                  <span className="text-sm font-bold text-slate-900">+30 points</span>
+                  <span className="text-sm font-bold text-slate-900">
+                    {stats ? `+${30 - (stats.disputes?.open || 0) * 10} points` : '+30 points'}
+                  </span>
                 </div>
                 <div className="w-full bg-slate-200 rounded-full h-2">
-                  <div className="bg-gradient-to-r from-indigo-600 to-blue-600 h-2 rounded-full" style={{ width: '75%' }}></div>
+                  <div 
+                    className="bg-gradient-to-r from-indigo-600 to-blue-600 h-2 rounded-full transition-all duration-1000" 
+                    style={{ width: stats ? `${Math.max(0, 75 - (stats.disputes?.open || 0) * 25)}%` : '75%' }}
+                  ></div>
                 </div>
               </div>
             </div>
@@ -449,7 +516,9 @@ export default function TrustPassPage() {
             <div className="grid md:grid-cols-3 gap-4">
               <div className="p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl text-center">
                 <div className="text-3xl font-bold text-blue-600 mb-2">
-                  {stats?.trustpass?.views_this_month || 0}
+                  {stats ? stats.trustpass?.views_this_month || 0 : (
+                    <div className="animate-pulse bg-blue-200 h-8 w-16 mx-auto rounded"></div>
+                  )}
                 </div>
                 <p className="text-sm font-semibold text-slate-600">Vues du TrustPass</p>
                 <p className="text-xs text-slate-500 mt-1">Ce mois-ci</p>
@@ -457,18 +526,22 @@ export default function TrustPassPage() {
 
               <div className="p-6 bg-gradient-to-br from-cyan-50 to-blue-50 rounded-2xl text-center">
                 <div className="text-3xl font-bold text-cyan-600 mb-2">
-                  {stats?.verifications?.total || 0}
+                  {stats ? stats.transactions?.total || 0 : (
+                    <div className="animate-pulse bg-cyan-200 h-8 w-16 mx-auto rounded"></div>
+                  )}
                 </div>
-                <p className="text-sm font-semibold text-slate-600">Vérifications</p>
+                <p className="text-sm font-semibold text-slate-600">Transactions</p>
                 <p className="text-xs text-slate-500 mt-1">Total</p>
               </div>
 
               <div className="p-6 bg-gradient-to-br from-indigo-50 to-blue-50 rounded-2xl text-center">
                 <div className="text-3xl font-bold text-indigo-600 mb-2">
-                  {stats?.trustpass?.shares || 0}
+                  {stats ? stats.verifications?.total || 0 : (
+                    <div className="animate-pulse bg-indigo-200 h-8 w-16 mx-auto rounded"></div>
+                  )}
                 </div>
-                <p className="text-sm font-semibold text-slate-600">Partages</p>
-                <p className="text-xs text-slate-500 mt-1">Cette semaine</p>
+                <p className="text-sm font-semibold text-slate-600">Vérifications</p>
+                <p className="text-xs text-slate-500 mt-1">Total</p>
               </div>
             </div>
           </div>
