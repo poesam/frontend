@@ -20,6 +20,7 @@ interface Dispute {
 
 export default function DisputesPage() {
   const [disputes, setDisputes] = useState<Dispute[]>([]);
+  const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -31,7 +32,48 @@ export default function DisputesPage() {
 
   useEffect(() => {
     loadDisputes();
+    loadTransactions();
   }, []);
+
+  const loadTransactions = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      // Récupérer l'entreprise
+      const companyResponse = await fetch(`${API_URL}/api/companies/my-company`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (companyResponse.ok) {
+        const companyData = await companyResponse.json();
+        if (companyData.success && companyData.data) {
+          const companyId = companyData.data.id;
+          
+          // Charger les transactions de cette entreprise
+          const response = await fetch(`${API_URL}/api/transactions?company_id=${companyId}`, {
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            let transactionsData = [];
+            
+            if (data.data?.data) {
+              transactionsData = data.data.data;
+            } else if (data.data) {
+              transactionsData = data.data;
+            }
+            
+            setTransactions(Array.isArray(transactionsData) ? transactionsData : []);
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Erreur chargement transactions:', error);
+      setTransactions([]);
+    }
+  };
 
   const loadDisputes = async () => {
     try {
@@ -328,15 +370,25 @@ export default function DisputesPage() {
             <div className="space-y-4 mb-6">
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-2">
-                  ID de la transaction <span className="text-red-400">*</span>
+                  Transaction concernée <span className="text-red-400">*</span>
                 </label>
-                <input
-                  type="number"
+                <select
                   value={newDispute.transaction_id}
                   onChange={(e) => setNewDispute({ ...newDispute, transaction_id: e.target.value })}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                  placeholder="Ex: 1"
-                />
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                >
+                  <option value="" className="bg-slate-800">Sélectionnez une transaction</option>
+                  {transactions.map((transaction) => (
+                    <option key={transaction.id} value={transaction.id} className="bg-slate-800">
+                      #{transaction.id} - {transaction.description} ({transaction.amount} FCFA)
+                    </option>
+                  ))}
+                </select>
+                {transactions.length === 0 && (
+                  <p className="text-white/60 text-xs mt-1">
+                    Aucune transaction disponible. Créez d'abord une transaction.
+                  </p>
+                )}
               </div>
 
               <div>
