@@ -4,30 +4,42 @@ import Pusher from 'pusher-js';
 // Make Pusher available globally for Laravel Echo
 (window as any).Pusher = Pusher;
 
-// Configuration Echo pour Laravel Reverb
+// Configuration Echo pour Pusher
 let echo: Echo<any> | null = null;
 
-const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
-const reverbHost = import.meta.env.VITE_REVERB_HOST;
-const reverbPort = import.meta.env.VITE_REVERB_PORT;
-const reverbScheme = import.meta.env.VITE_REVERB_SCHEME || 'http';
+const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
+const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER;
+const pusherHost = import.meta.env.VITE_PUSHER_HOST;
+const pusherPort = import.meta.env.VITE_PUSHER_PORT;
+const pusherScheme = import.meta.env.VITE_PUSHER_SCHEME || 'https';
 
-if (reverbKey && reverbHost) {
-  echo = new Echo({
-    broadcaster: 'reverb',
-    key: reverbKey,
-    wsHost: reverbHost,
-    wsPort: reverbPort || 8080,
-    wssPort: reverbPort || 8080,
-    forceTLS: reverbScheme === 'https',
-    enabledTransports: ['ws', 'wss'],
+if (pusherKey && pusherKey !== 'YOUR_PUSHER_APP_KEY' && pusherKey !== '') {
+  const config: any = {
+    broadcaster: 'pusher',
+    key: pusherKey,
+    cluster: pusherCluster || 'eu',
+    forceTLS: pusherScheme === 'https',
+    encrypted: pusherScheme === 'https',
     disableStats: true,
-  });
+  };
 
-  console.log('📡 Laravel Reverb WebSocket activé');
-  console.log(`🔗 Connexion: ${reverbScheme}://${reverbHost}:${reverbPort}`);
+  // Si un host personnalisé est défini (pour les tests), l'utiliser
+  if (pusherHost) {
+    config.wsHost = pusherHost;
+    config.wsPort = pusherPort || 443;
+    config.wssPort = pusherPort || 443;
+    config.enabledTransports = ['ws', 'wss'];
+  }
+
+  echo = new Echo(config);
+
+  console.log('📡 Pusher WebSocket activé');
+  console.log(`🔗 Cluster: ${pusherCluster || 'eu'}`);
+  if (pusherHost) {
+    console.log(`🔗 Host: ${pusherScheme}://${pusherHost}:${pusherPort}`);
+  }
 } else {
-  console.log('📡 WebSocket désactivé (Reverb non configuré)');
+  console.log('📡 WebSocket désactivé (pas de clé Pusher configurée)');
 }
 
 export default echo;
