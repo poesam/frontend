@@ -98,7 +98,15 @@ export default function VerificationsPage() {
     } catch (error: any) {
       console.error('❌ Erreur soumission vérification:', error);
       console.error('❌ Détails erreur:', error.response?.data);
-      alert(`Erreur: ${error.response?.data?.message || error.message || 'Erreur lors de la soumission'}\n\nDétails: ${JSON.stringify(error.response?.data?.errors || {})}`);
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Erreur lors de la soumission';
+      
+      // Message spécifique si une demande est déjà en cours
+      if (errorMessage.includes('déjà en cours')) {
+        alert(`⚠️ Une demande de vérification est déjà en cours pour votre entreprise.\n\nVeuillez attendre que cette demande soit traitée par un vérificateur avant d'en soumettre une nouvelle.\n\nVous pouvez voir l'état de votre demande dans la liste ci-dessous.`);
+      } else {
+        alert(`Erreur: ${errorMessage}\n\nDétails: ${JSON.stringify(error.response?.data?.errors || {})}`);
+      }
     }
   };
 
