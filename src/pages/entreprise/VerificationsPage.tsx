@@ -31,9 +31,31 @@ export default function VerificationsPage() {
   const loadVerifications = async () => {
     try {
       setLoading(true);
-      const response = await verificationService.getAll();
-      const data = response.data.data || response.data || [];
-      setVerifications(Array.isArray(data) ? data : []);
+      
+      // Récupérer d'abord l'entreprise de l'utilisateur connecté
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      const companyResponse = await fetch(`${API_URL}/api/companies/my-company`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (companyResponse.ok) {
+        const companyData = await companyResponse.json();
+        if (companyData.success && companyData.data) {
+          const companyId = companyData.data.id;
+          
+          // Charger les demandes de vérification de cette entreprise uniquement
+          const response = await verificationService.getAll({ company_id: companyId });
+          const data = response.data.data || response.data || [];
+          setVerifications(Array.isArray(data) ? data : []);
+        } else {
+          setVerifications([]);
+        }
+      } else {
+        console.error('Impossible de récupérer l\'entreprise');
+        setVerifications([]);
+      }
     } catch (error) {
       console.error('Erreur chargement vérifications:', error);
       setVerifications([]);
