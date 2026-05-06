@@ -5,7 +5,7 @@ import Pusher from 'pusher-js';
 (window as any).Pusher = Pusher;
 
 // Configuration Echo pour Laravel Reverb
-let echo: Echo | null = null;
+let echo: Echo<any> | null = null;
 
 const reverbKey = import.meta.env.VITE_REVERB_APP_KEY;
 const reverbHost = import.meta.env.VITE_REVERB_HOST;
