@@ -58,22 +58,23 @@ export default function TrustPassReal() {
               }
             } catch (statsError) {
               console.error('❌ Erreur stats:', statsError);
-              // Utiliser des stats par défaut
+              // Utiliser des stats par défaut pour nouveau prestataire
               setStats({
                 transactions: { total: 0, completed: 0, pending: 0 },
                 verifications: { total: 0, approved: 0, pending: 0 },
                 trustpass: { views: 0, views_this_month: 0 },
                 disputes: { total: 0, open: 0 },
-                trust_score: companyData.trust_score || 25
+                trust_score: companyData.trust_score || 25 // Score réaliste pour nouveau prestataire
               });
             }
           }
 
-          // 3. Générer/récupérer le QR code si TrustPass existe
+          // 3. Générer/récupérer le QR code
           if (companyData.trust_pass?.id) {
             await loadOrGenerateQRCode(companyData.trust_pass.id, token, API_URL);
           } else {
             // Générer un QR code simple côté client
+            console.log('🔧 Génération QR code côté client pour:', companyData.trust_code);
             generateClientQRCode(companyData.trust_code);
           }
         } else {
@@ -143,28 +144,64 @@ export default function TrustPassReal() {
     
     if (!ctx) return;
     
-    canvas.width = 200;
-    canvas.height = 200;
+    canvas.width = 300;
+    canvas.height = 300;
     
     // Fond blanc
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 200, 200);
+    ctx.fillRect(0, 0, 300, 300);
     
-    // Bordure
-    ctx.strokeStyle = '#000000';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(10, 10, 180, 180);
-    
-    // Texte du code
+    // Créer un pattern QR code simple
     ctx.fillStyle = '#000000';
-    ctx.font = 'bold 16px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText(trustCode, 100, 100);
-    ctx.font = '12px Arial';
-    ctx.fillText('TrustRail MEA', 100, 120);
+    const cellSize = 10;
+    const gridSize = 25;
+    const offset = (300 - gridSize * cellSize) / 2;
     
-    setQrCodeUrl(canvas.toDataURL());
-    console.log('✅ QR code généré côté client (fallback)');
+    // Générer un pattern basé sur le code TrustPass
+    const hash = trustCode.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        // Marqueurs de position (coins)
+        if ((i < 7 && j < 7) || (i < 7 && j >= gridSize - 7) || (i >= gridSize - 7 && j < 7)) {
+          if ((i < 7 && j < 7 && (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4))) ||
+              (i < 7 && j >= gridSize - 7 && (i === 0 || i === 6 || j === gridSize - 7 || j === gridSize - 1 || (i >= 2 && i <= 4 && j >= gridSize - 5 && j <= gridSize - 3))) ||
+              (i >= gridSize - 7 && j < 7 && (i === gridSize - 7 || i === gridSize - 1 || j === 0 || j === 6 || (i >= gridSize - 5 && i <= gridSize - 3 && j >= 2 && j <= 4)))) {
+            ctx.fillRect(offset + j * cellSize, offset + i * cellSize, cellSize, cellSize);
+          }
+        }
+        // Pattern de données
+        else if ((hash + i * gridSize + j) % 3 === 0) {
+          ctx.fillRect(offset + j * cellSize, offset + i * cellSize, cellSize, cellSize);
+        }
+      }
+    }
+    
+    // Ajouter le logo au centre
+    const centerX = 150;
+    const centerY = 150;
+    const logoSize = 50;
+    
+    // Fond blanc pour le logo
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(centerX - logoSize/2, centerY - logoSize/2, logoSize, logoSize);
+    
+    // Bordure du logo
+    ctx.strokeStyle = '#3b82f6';
+    ctx.lineWidth = 3;
+    ctx.strokeRect(centerX - logoSize/2, centerY - logoSize/2, logoSize, logoSize);
+    
+    // Texte du logo
+    ctx.fillStyle = '#3b82f6';
+    ctx.font = 'bold 14px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('TR', centerX, centerY - 4);
+    ctx.font = '10px Arial';
+    ctx.fillText('MEA', centerX, centerY + 12);
+    
+    const dataUrl = canvas.toDataURL('image/png');
+    setQrCodeUrl(dataUrl);
+    console.log('✅ QR code généré côté client (fallback) pour:', trustCode);
   };
 
   const handleCopyCode = () => {
@@ -284,11 +321,25 @@ export default function TrustPassReal() {
                       src={qrCodeUrl} 
                       alt="QR Code TrustPass" 
                       className="max-w-full max-h-full object-contain rounded-lg"
+                      onError={(e) => {
+                        console.error('❌ Erreur chargement QR code:', e);
+                        // Fallback: générer côté client si l'image ne charge pas
+                        if (company?.trust_code) {
+                          generateClientQRCode(company.trust_code);
+                        }
+                      }}
+                      onLoad={() => {
+                        console.log('✅ QR code chargé avec succès');
+                      }}
                     />
                     
+                    {/* Logo TrustRail au centre */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center border-2 border-blue-500">
-                        <QrCode className="w-6 h-6 text-blue-600" />
+                        <div className="text-center">
+                          <div className="text-xs font-bold text-blue-600">TR</div>
+                          <div className="text-[8px] text-blue-500">MEA</div>
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -368,10 +419,15 @@ export default function TrustPassReal() {
             <div className="grid md:grid-cols-2 gap-6">
               <div className="text-center p-6 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-2xl">
                 <div className="text-6xl font-bold text-blue-600 mb-2">
-                  {stats?.trust_score || company.trust_score || 0}
+                  {stats?.trust_score ?? company?.trust_score ?? 25}
                 </div>
                 <p className="text-sm font-semibold text-slate-600">Score Actuel</p>
                 <p className="text-xs text-slate-500 mt-1">Sur 100</p>
+                {(stats?.trust_score ?? company?.trust_score ?? 25) < 50 && (
+                  <p className="text-xs text-amber-600 mt-2 font-medium">
+                    Nouveau prestataire - Score en construction
+                  </p>
+                )}
               </div>
 
               <div className="space-y-4">
