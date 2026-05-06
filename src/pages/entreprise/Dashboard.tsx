@@ -25,6 +25,7 @@ function Overview() {
   const [recentTransactions, setRecentTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [companyId, setCompanyId] = useState<number | null>(null);
+  const [companyData, setCompanyData] = useState<any>(null);
 
   useEffect(() => {
     loadData();
@@ -34,17 +35,35 @@ function Overview() {
     try {
       setLoading(true);
       
-      // Récupérer l'entreprise de l'utilisateur
-      const companiesResponse = await companyService.getAll();
-      const companies = companiesResponse.data.data?.data || companiesResponse.data.data || [];
-      const myCompany = companies.find((c: any) => c.user_id === user?.id);
+      // Utiliser la nouvelle API pour récupérer l'entreprise de l'utilisateur
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       
-      if (myCompany) {
-        setCompanyId(myCompany.id);
+      try {
+        const companyResponse = await fetch(`${API_URL}/api/companies/my-company`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
         
-        // Charger les stats de l'entreprise
-        const statsResponse = await companyService.getStats(myCompany.id);
-        setStats(statsResponse.data.data || statsResponse.data || {});
+        if (companyResponse.ok) {
+          const companyData = await companyResponse.json();
+          if (companyData.success) {
+            const myCompany = companyData.data;
+            setCompanyId(myCompany.id);
+            
+            // Charger les stats de l'entreprise
+            const statsResponse = await companyService.getStats(myCompany.id);
+            setStats(statsResponse.data.data || statsResponse.data || {});
+            
+            // Stocker les données de l'entreprise pour l'affichage
+            setCompanyData(myCompany);
+          }
+        } else {
+          // Fallback vers l'ancienne méthode
+          await loadDataFallback();
+        }
+      } catch (error) {
+        console.error('Erreur API my-company:', error);
+        await loadDataFallback();
       }
       
       // Charger les transactions récentes
@@ -66,6 +85,22 @@ function Overview() {
       setRecentTransactions([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadDataFallback = async () => {
+    // Récupérer l'entreprise de l'utilisateur (méthode fallback)
+    const companiesResponse = await companyService.getAll();
+    const companies = companiesResponse.data.data?.data || companiesResponse.data.data || [];
+    const myCompany = companies.find((c: any) => c.user_id === user?.id);
+    
+    if (myCompany) {
+      setCompanyId(myCompany.id);
+      setCompanyData(myCompany);
+      
+      // Charger les stats de l'entreprise
+      const statsResponse = await companyService.getStats(myCompany.id);
+      setStats(statsResponse.data.data || statsResponse.data || {});
     }
   };
   
@@ -206,9 +241,9 @@ function Overview() {
             <div className="space-y-2">
               <p className="text-sm font-semibold text-slate-600">Code TrustPass</p>
               <p className="text-2xl font-bold text-blue-600">
-                {companyId ? `TP-${new Date().getFullYear()}-${String(companyId).padStart(3, '0')}` : 'TP-XXXX-XXX'}
+                {companyData?.trust_code || 'TR-XX-XXX'}
               </p>
-              {stats?.verifications?.approved > 0 ? (
+              {companyData?.verification_status === 'verifie' ? (
                 <div className="inline-flex items-center space-x-2 px-4 py-2 bg-emerald-100 text-emerald-700 rounded-full text-sm font-semibold">
                   <AlertCircle className="w-4 h-4" />
                   <span>Vérifié</span>
