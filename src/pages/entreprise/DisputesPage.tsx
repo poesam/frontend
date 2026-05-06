@@ -36,11 +36,32 @@ export default function DisputesPage() {
   const loadDisputes = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Chargement des litiges...');
+      
       const response = await disputeService.getAll();
-      const data = response.data.data || response.data || [];
-      setDisputes(Array.isArray(data) ? data : []);
+      console.log('📋 Réponse litiges:', response.data);
+      
+      // L'API peut retourner une réponse paginée : { data: { data: [...], total: X, ... } }
+      // Il faut extraire le tableau 'data' de l'objet de pagination
+      let disputesData = [];
+      
+      if (response.data.data && Array.isArray(response.data.data.data)) {
+        // Cas 1: response.data.data.data (pagination Laravel)
+        disputesData = response.data.data.data;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        // Cas 2: response.data.data (tableau direct)
+        disputesData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        // Cas 3: response.data (tableau direct)
+        disputesData = response.data;
+      }
+      
+      console.log('✅ Litiges extraits:', disputesData);
+      console.log('📊 Nombre de litiges:', disputesData.length);
+      
+      setDisputes(disputesData);
     } catch (error) {
-      console.error('Erreur chargement litiges:', error);
+      console.error('❌ Erreur chargement litiges:', error);
       setDisputes([]);
     } finally {
       setLoading(false);
