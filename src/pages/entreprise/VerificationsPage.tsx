@@ -36,28 +36,41 @@ export default function VerificationsPage() {
       const token = localStorage.getItem('token');
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       
+      console.log('🔍 Chargement des vérifications...');
+      
       const companyResponse = await fetch(`${API_URL}/api/companies/my-company`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
+      console.log('📡 Réponse entreprise:', companyResponse.status);
+      
       if (companyResponse.ok) {
         const companyData = await companyResponse.json();
+        console.log('🏢 Données entreprise:', companyData);
+        
         if (companyData.success && companyData.data) {
           const companyId = companyData.data.id;
+          console.log('🆔 Company ID:', companyId);
           
           // Charger les demandes de vérification de cette entreprise uniquement
           const response = await verificationService.getAll({ company_id: companyId });
+          console.log('📋 Réponse vérifications:', response.data);
+          
           const data = response.data.data || response.data || [];
+          console.log('✅ Vérifications chargées:', data);
+          console.log('📊 Nombre de vérifications:', Array.isArray(data) ? data.length : 0);
+          
           setVerifications(Array.isArray(data) ? data : []);
         } else {
+          console.warn('⚠️ Pas de données entreprise');
           setVerifications([]);
         }
       } else {
-        console.error('Impossible de récupérer l\'entreprise');
+        console.error('❌ Impossible de récupérer l\'entreprise');
         setVerifications([]);
       }
     } catch (error) {
-      console.error('Erreur chargement vérifications:', error);
+      console.error('❌ Erreur chargement vérifications:', error);
       setVerifications([]);
     } finally {
       setLoading(false);
