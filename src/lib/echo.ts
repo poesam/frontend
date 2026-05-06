@@ -13,7 +13,10 @@ const pusherHost = import.meta.env.VITE_PUSHER_HOST;
 const pusherPort = import.meta.env.VITE_PUSHER_PORT;
 const pusherScheme = import.meta.env.VITE_PUSHER_SCHEME || 'https';
 
-if (pusherKey && pusherKey !== 'YOUR_PUSHER_APP_KEY' && pusherKey !== '') {
+// Désactiver temporairement Pusher pour éviter les erreurs de connexion
+const pusherEnabled = false; // Changer à true quand les variables Vercel seront configurées
+
+if (pusherEnabled && pusherKey && pusherKey !== 'YOUR_PUSHER_APP_KEY' && pusherKey !== '') {
   const config: any = {
     broadcaster: 'pusher',
     key: pusherKey,
@@ -39,7 +42,7 @@ if (pusherKey && pusherKey !== 'YOUR_PUSHER_APP_KEY' && pusherKey !== '') {
     console.log(`🔗 Host: ${pusherScheme}://${pusherHost}:${pusherPort}`);
   }
 } else {
-  console.log('📡 WebSocket désactivé (pas de clé Pusher configurée)');
+  console.log('📡 WebSocket désactivé temporairement');
 }
 
 export default echo;
