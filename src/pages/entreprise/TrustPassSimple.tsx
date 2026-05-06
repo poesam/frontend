@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../../context/AuthContext';
-import { generateQRCodeDataURL, getRealCompanyData } from '../../utils/qrGenerator';
+import { generateTrustPassQR, downloadQR } from '../../utils/realQrGenerator';
 import { 
   QrCode, Download, Share2, Eye, TrendingUp, Shield, 
   CheckCircle2, Building2, Copy, RefreshCw
@@ -18,16 +18,29 @@ export default function TrustPassSimple() {
   }, []);
 
   const loadData = () => {
-    // Utiliser les vraies données
-    const realData = getRealCompanyData();
-    setCompany(realData);
+    // Données de test pour nouveau prestataire
+    const testData = {
+      id: 6,
+      trust_code: 'TR-SN-006',
+      commercial_name: 'Express Services',
+      business_type: 'livreur',
+      city: 'Dakar',
+      trust_score: 25,
+      verification_status: 'en_attente',
+      phone: '+221 77 123 45 67',
+      address: '123 Avenue Bourguiba, Dakar',
+      created_at: new Date().toISOString().split('T')[0],
+    };
     
-    // Générer le QR code
-    const publicUrl = `${window.location.origin}/trustpass/${realData.trust_code}`;
-    const qrUrl = generateQRCodeDataURL(publicUrl, 300);
-    setQrCodeUrl(qrUrl);
+    setCompany(testData);
+    
+    // Générer un vrai QR code scannable
+    const publicUrl = `${window.location.origin}/trustpass/${testData.trust_code}`;
+    const realQRUrl = generateTrustPassQR(testData.trust_code, publicUrl);
+    setQrCodeUrl(realQRUrl);
     
     setLoading(false);
+    console.log('✅ QR code réel généré pour test:', realQRUrl);
   };
 
   const handleCopyCode = () => {
@@ -39,11 +52,8 @@ export default function TrustPassSimple() {
   };
 
   const handleDownloadQR = () => {
-    if (qrCodeUrl) {
-      const link = document.createElement('a');
-      link.download = `trustpass_${company.trust_code}.png`;
-      link.href = qrCodeUrl;
-      link.click();
+    if (qrCodeUrl && company?.trust_code) {
+      downloadQR(qrCodeUrl, company.trust_code);
     }
   };
 

@@ -5,6 +5,7 @@ import {
   QrCode, Download, Share2, Eye, TrendingUp, Shield, 
   CheckCircle2, Building2, Copy, RefreshCw, AlertTriangle
 } from 'lucide-react';
+import { RealQRGenerator, generateTrustPassQR, downloadQR } from '../../utils/realQrGenerator';
 
 export default function TrustPassReal() {
   const { user } = useAuth();
@@ -69,13 +70,22 @@ export default function TrustPassReal() {
             }
           }
 
-          // 3. Générer/récupérer le QR code
-          if (companyData.trust_pass?.id) {
-            await loadOrGenerateQRCode(companyData.trust_pass.id, token, API_URL);
-          } else {
-            // Générer un QR code simple côté client
-            console.log('🔧 Génération QR code côté client pour:', companyData.trust_code);
-            generateClientQRCode(companyData.trust_code);
+          // 3. Générer le QR code réel
+          if (companyData.trust_pass?.public_url || companyData.trust_code) {
+            const publicUrl = companyData.trust_pass?.public_url || 
+                            `https://frontend-ten-olive-56.vercel.app/trustpass/${companyData.trust_code}`;
+            
+            console.log('🔧 Génération QR code réel pour:', publicUrl);
+            
+            // Essayer d'abord le QR code depuis le backend
+            if (companyData.trust_pass?.id) {
+              await loadOrGenerateQRCode(companyData.trust_pass.id, token, API_URL, publicUrl);
+            } else {
+              // Générer un vrai QR code côté client
+              const realQRUrl = generateTrustPassQR(companyData.trust_code, publicUrl);
+              setQrCodeUrl(realQRUrl);
+              console.log('✅ QR code réel généré:', realQRUrl);
+            }
           }
         } else {
           setError('Entreprise non trouvée');
@@ -93,30 +103,34 @@ export default function TrustPassReal() {
     }
   };
 
-  const loadOrGenerateQRCode = async (trustPassId: number, token: string, apiUrl: string) => {
+  const loadOrGenerateQRCode = async (trustPassId: number, token: string, apiUrl: string, publicUrl: string) => {
     try {
-      // Essayer de récupérer le QR code existant
+      // Essayer de récupérer le QR code existant depuis le backend
       const trustPassResponse = await axios.get(`${apiUrl}/api/trust-passes/${trustPassId}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
       if (trustPassResponse.data.success && trustPassResponse.data.data.qr_code_url) {
-        setQrCodeUrl(trustPassResponse.data.data.qr_code_url);
-        console.log('✅ QR code existant récupéré');
-      } else {
-        // Générer un nouveau QR code
-        await generateBackendQRCode(trustPassId, token, apiUrl);
+        // Vérifier si l'URL du QR code est valide
+        if (RealQRGenerator.isValidQRUrl(trustPassResponse.data.data.qr_code_url)) {
+          setQrCodeUrl(trustPassResponse.data.data.qr_code_url);
+          console.log('✅ QR code existant récupéré du backend');
+          return;
+        }
       }
+      
+      // Si pas de QR code valide, essayer de le générer via le backend
+      await generateBackendQRCode(trustPassId, token, apiUrl, publicUrl);
     } catch (error) {
-      console.error('❌ Erreur QR code:', error);
-      // Fallback: générer côté client
-      if (company?.trust_code) {
-        generateClientQRCode(company.trust_code);
-      }
+      console.error('❌ Erreur QR code backend:', error);
+      // Fallback: générer un vrai QR code côté client
+      const realQRUrl = generateTrustPassQR(company?.trust_code || '', publicUrl);
+      setQrCodeUrl(realQRUrl);
+      console.log('✅ QR code réel généré côté client (fallback)');
     }
   };
 
-  const generateBackendQRCode = async (trustPassId: number, token: string, apiUrl: string) => {
+  const generateBackendQRCode = async (trustPassId: number, token: string, apiUrl: string, publicUrl: string) => {
     try {
       const response = await axios.post(
         `${apiUrl}/api/trust-passes/${trustPassId}/generate-qr`,
@@ -124,84 +138,30 @@ export default function TrustPassReal() {
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      if (response.data.success) {
+      if (response.data.success && response.data.data.qr_code_url) {
         setQrCodeUrl(response.data.data.qr_code_url);
         console.log('✅ QR code généré par le backend');
+      } else {
+        // Fallback: générer un vrai QR code côté client
+        const realQRUrl = generateTrustPassQR(company?.trust_code || '', publicUrl);
+        setQrCodeUrl(realQRUrl);
+        console.log('✅ QR code réel généré côté client (fallback backend)');
       }
     } catch (error) {
       console.error('❌ Erreur génération QR backend:', error);
-      // Fallback: générer côté client
-      if (company?.trust_code) {
-        generateClientQRCode(company.trust_code);
-      }
+      // Fallback: générer un vrai QR code côté client
+      const realQRUrl = generateTrustPassQR(company?.trust_code || '', publicUrl);
+      setQrCodeUrl(realQRUrl);
+      console.log('✅ QR code réel généré côté client (fallback error)');
     }
   };
 
   const generateClientQRCode = (trustCode: string) => {
-    // Générer un QR code simple côté client comme fallback
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    if (!ctx) return;
-    
-    canvas.width = 300;
-    canvas.height = 300;
-    
-    // Fond blanc
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 300, 300);
-    
-    // Créer un pattern QR code simple
-    ctx.fillStyle = '#000000';
-    const cellSize = 10;
-    const gridSize = 25;
-    const offset = (300 - gridSize * cellSize) / 2;
-    
-    // Générer un pattern basé sur le code TrustPass
-    const hash = trustCode.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        // Marqueurs de position (coins)
-        if ((i < 7 && j < 7) || (i < 7 && j >= gridSize - 7) || (i >= gridSize - 7 && j < 7)) {
-          if ((i < 7 && j < 7 && (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4))) ||
-              (i < 7 && j >= gridSize - 7 && (i === 0 || i === 6 || j === gridSize - 7 || j === gridSize - 1 || (i >= 2 && i <= 4 && j >= gridSize - 5 && j <= gridSize - 3))) ||
-              (i >= gridSize - 7 && j < 7 && (i === gridSize - 7 || i === gridSize - 1 || j === 0 || j === 6 || (i >= gridSize - 5 && i <= gridSize - 3 && j >= 2 && j <= 4)))) {
-            ctx.fillRect(offset + j * cellSize, offset + i * cellSize, cellSize, cellSize);
-          }
-        }
-        // Pattern de données
-        else if ((hash + i * gridSize + j) % 3 === 0) {
-          ctx.fillRect(offset + j * cellSize, offset + i * cellSize, cellSize, cellSize);
-        }
-      }
-    }
-    
-    // Ajouter le logo au centre
-    const centerX = 150;
-    const centerY = 150;
-    const logoSize = 50;
-    
-    // Fond blanc pour le logo
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(centerX - logoSize/2, centerY - logoSize/2, logoSize, logoSize);
-    
-    // Bordure du logo
-    ctx.strokeStyle = '#3b82f6';
-    ctx.lineWidth = 3;
-    ctx.strokeRect(centerX - logoSize/2, centerY - logoSize/2, logoSize, logoSize);
-    
-    // Texte du logo
-    ctx.fillStyle = '#3b82f6';
-    ctx.font = 'bold 14px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('TR', centerX, centerY - 4);
-    ctx.font = '10px Arial';
-    ctx.fillText('MEA', centerX, centerY + 12);
-    
-    const dataUrl = canvas.toDataURL('image/png');
-    setQrCodeUrl(dataUrl);
-    console.log('✅ QR code généré côté client (fallback) pour:', trustCode);
+    // Générer un vrai QR code scannable côté client
+    const publicUrl = `https://frontend-ten-olive-56.vercel.app/trustpass/${trustCode}`;
+    const realQRUrl = generateTrustPassQR(trustCode, publicUrl);
+    setQrCodeUrl(realQRUrl);
+    console.log('✅ QR code réel généré côté client pour:', trustCode, '→', publicUrl);
   };
 
   const handleCopyCode = () => {
@@ -213,11 +173,8 @@ export default function TrustPassReal() {
   };
 
   const handleDownloadQR = () => {
-    if (qrCodeUrl) {
-      const link = document.createElement('a');
-      link.download = `trustpass_${company.trust_code}.png`;
-      link.href = qrCodeUrl;
-      link.click();
+    if (qrCodeUrl && company?.trust_code) {
+      downloadQR(qrCodeUrl, company.trust_code);
     }
   };
 
@@ -323,7 +280,7 @@ export default function TrustPassReal() {
                       className="max-w-full max-h-full object-contain rounded-lg"
                       onError={(e) => {
                         console.error('❌ Erreur chargement QR code:', e);
-                        // Fallback: générer côté client si l'image ne charge pas
+                        // Fallback: générer un vrai QR code côté client si l'image ne charge pas
                         if (company?.trust_code) {
                           generateClientQRCode(company.trust_code);
                         }
