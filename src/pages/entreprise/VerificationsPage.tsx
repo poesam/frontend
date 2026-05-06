@@ -7,11 +7,13 @@ import {
 
 interface VerificationRequest {
   id: number;
-  status: 'pending' | 'approved' | 'rejected';
-  documents_count: number;
-  created_at: string;
-  notes?: string;
-  verificateur?: { name: string };
+  status: 'en_attente' | 'en_cours' | 'approuve' | 'refuse';
+  business_proof?: string;
+  additional_info?: string;
+  review_notes?: string;
+  submitted_at: string;
+  reviewed_at?: string;
+  reviewer?: { name: string };
 }
 
 export default function VerificationsPage() {
@@ -47,34 +49,57 @@ export default function VerificationsPage() {
   };
 
   const handleSubmitVerification = async () => {
-    if (documents.length === 0) {
-      alert('Veuillez sélectionner au moins un document');
-      return;
-    }
-
     try {
-      const formData = new FormData();
-      documents.forEach((doc) => {
-        formData.append('documents[]', doc);
+      // D'abord, récupérer l'ID de l'entreprise de l'utilisateur connecté
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      const companyResponse = await fetch(`${API_URL}/api/companies/my-company`, {
+        headers: { Authorization: `Bearer ${token}` }
       });
-
-      await verificationService.create(formData);
-      setShowModal(false);
-      setDocuments([]);
-      loadVerifications();
-    } catch (error) {
+      
+      if (!companyResponse.ok) {
+        throw new Error('Impossible de récupérer les informations de l\'entreprise');
+      }
+      
+      const companyData = await companyResponse.json();
+      if (!companyData.success) {
+        throw new Error('Entreprise non trouvée');
+      }
+      
+      const companyId = companyData.data.id;
+      
+      // Créer la demande de vérification
+      const verificationData = {
+        company_id: companyId,
+        business_proof: `Demande de vérification soumise avec ${documents.length} document(s). Documents: ${documents.map(d => d.name).join(', ')}`,
+        additional_info: 'Demande soumise via l\'interface utilisateur'
+      };
+      
+      const response = await verificationService.create(verificationData);
+      
+      if (response.data.success) {
+        alert('Demande de vérification soumise avec succès !');
+        setShowModal(false);
+        setDocuments([]);
+        loadVerifications();
+      } else {
+        throw new Error(response.data.message || 'Erreur lors de la soumission');
+      }
+    } catch (error: any) {
       console.error('Erreur soumission vérification:', error);
-      alert('Erreur lors de la soumission');
+      alert(`Erreur: ${error.message || 'Erreur lors de la soumission'}`);
     }
   };
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      pending: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'En attente', icon: Clock },
-      approved: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Approuvée', icon: CheckCircle2 },
-      rejected: { bg: 'bg-red-100', text: 'text-red-700', label: 'Refusée', icon: XCircle },
+      en_attente: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'En attente', icon: Clock },
+      en_cours: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'En cours', icon: Clock },
+      approuve: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Approuvée', icon: CheckCircle2 },
+      refuse: { bg: 'bg-red-100', text: 'text-red-700', label: 'Refusée', icon: XCircle },
     };
-    const badge = badges[status as keyof typeof badges] || badges.pending;
+    const badge = badges[status as keyof typeof badges] || badges.en_attente;
     const Icon = badge.icon;
     return (
       <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
@@ -91,9 +116,9 @@ export default function VerificationsPage() {
 
   const stats = {
     total: verifications.length,
-    pending: verifications.filter(v => v.status === 'pending').length,
-    approved: verifications.filter(v => v.status === 'approved').length,
-    rejected: verifications.filter(v => v.status === 'rejected').length,
+    pending: verifications.filter(v => v.status === 'en_attente' || v.status === 'en_cours').length,
+    approved: verifications.filter(v => v.status === 'approuve').length,
+    rejected: verifications.filter(v => v.status === 'refuse').length,
   };
 
   return (
@@ -184,9 +209,10 @@ export default function VerificationsPage() {
               className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
             >
               <option value="all">Tous les statuts</option>
-              <option value="pending">En attente</option>
-              <option value="approved">Approuvées</option>
-              <option value="rejected">Refusées</option>
+              <option value="en_attente">En attente</option>
+              <option value="en_cours">En cours</option>
+              <option value="approuve">Approuvées</option>
+              <option value="refuse">Refusées</option>
             </select>
           </div>
 
@@ -235,11 +261,11 @@ export default function VerificationsPage() {
                       <div className="flex items-center space-x-4 text-sm text-slate-600">
                         <span className="flex items-center space-x-1">
                           <Calendar className="w-4 h-4" />
-                          <span>{new Date(verification.created_at).toLocaleDateString('fr-FR')}</span>
+                          <span>{new Date(verification.submitted_at).toLocaleDateString('fr-FR')}</span>
                         </span>
                         <span className="flex items-center space-x-1">
-                          <Upload className="w-4 h-4" />
-                          <span>{verification.documents_count} documents</span>
+                          <FileText className="w-4 h-4" />
+                          <span>Demande #{verification.id}</span>
                         </span>
                       </div>
                     </div>
@@ -248,26 +274,26 @@ export default function VerificationsPage() {
                     </div>
                   </div>
 
-                  {verification.notes && (
+                  {verification.review_notes && (
                     <div className={`p-4 rounded-xl border-2 ${
-                      verification.status === 'approved' 
+                      verification.status === 'approuve' 
                         ? 'bg-emerald-50 border-emerald-200' 
                         : 'bg-red-50 border-red-200'
                     }`}>
                       <div className="flex items-start space-x-2">
                         <AlertCircle className={`w-5 h-5 flex-shrink-0 mt-0.5 ${
-                          verification.status === 'approved' ? 'text-emerald-600' : 'text-red-600'
+                          verification.status === 'approuve' ? 'text-emerald-600' : 'text-red-600'
                         }`} />
                         <div>
                           <div className={`text-xs font-semibold mb-1 ${
-                            verification.status === 'approved' ? 'text-emerald-700' : 'text-red-700'
+                            verification.status === 'approuve' ? 'text-emerald-700' : 'text-red-700'
                           }`}>
                             Notes du vérificateur
                           </div>
                           <div className={`text-sm ${
-                            verification.status === 'approved' ? 'text-emerald-900' : 'text-red-900'
+                            verification.status === 'approuve' ? 'text-emerald-900' : 'text-red-900'
                           }`}>
-                            {verification.notes}
+                            {verification.review_notes}
                           </div>
                         </div>
                       </div>
