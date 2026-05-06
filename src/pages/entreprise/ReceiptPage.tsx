@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { RealQRGenerator } from '../../utils/realQrGenerator';
 
 interface Transaction {
   id: number;
@@ -43,10 +44,31 @@ const ReceiptPage: React.FC = () => {
   const [transaction, setTransaction] = useState<Transaction | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [transactionQR, setTransactionQR] = useState<string>('');
 
   useEffect(() => {
     fetchTransaction();
   }, [id]);
+
+  useEffect(() => {
+    if (transaction) {
+      // Générer le QR code avec toutes les informations de la transaction
+      const transactionData = {
+        reference: transaction.reference,
+        montant: `${transaction.amount} ${transaction.currency}`,
+        vendeur: transaction.company.commercial_name,
+        trust_code: transaction.company.trust_code,
+        date: new Date(transaction.created_at).toLocaleDateString('fr-FR'),
+        statut: getStatusLabel(transaction.status),
+        description: transaction.description,
+        verification_url: `${window.location.origin}/verify/${transaction.reference}`
+      };
+      
+      const qrData = JSON.stringify(transactionData);
+      const qrUrl = RealQRGenerator.generateQRCode(qrData, { size: 300 });
+      setTransactionQR(qrUrl);
+    }
+  }, [transaction]);
 
   const fetchTransaction = async () => {
     try {
@@ -434,7 +456,65 @@ const ReceiptPage: React.FC = () => {
               </p>
             </div>
 
-            {/* QR Code Section */}
+            {/* QR Code Section - Transaction */}
+            <div style={{ marginBottom: '20px' }}>
+              <h2 style={{ 
+                fontSize: '9pt', 
+                color: '#1e293b', 
+                fontWeight: 700, 
+                textTransform: 'uppercase', 
+                letterSpacing: '1.5px', 
+                marginBottom: '12px', 
+                paddingBottom: '6px', 
+                borderBottom: '2px solid #e2e8f0' 
+              }}>
+                Code QR de la Transaction
+              </h2>
+              <div style={{ background: '#f8fafc', padding: '20px', textAlign: 'center', borderRadius: '2px' }}>
+                <div style={{ background: 'white', display: 'inline-block', padding: '15px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+                  {transactionQR ? (
+                    <img 
+                      src={transactionQR} 
+                      alt="QR Code Transaction" 
+                      style={{ width: '200px', height: '200px', display: 'block' }}
+                    />
+                  ) : (
+                    <div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+                      <p style={{ fontSize: '8pt', color: '#64748b' }}>Génération du QR code...</p>
+                    </div>
+                  )}
+                </div>
+                <p style={{ fontSize: '8pt', color: '#64748b', marginTop: '12px', lineHeight: 1.6 }}>
+                  Scannez ce QR code pour vérifier les détails de cette transaction<br />
+                  <span style={{ fontFamily: "'Courier New', monospace", fontWeight: 700, color: '#1e293b' }}>
+                    {transaction.reference}
+                  </span>
+                </p>
+                <div style={{ 
+                  background: '#eff6ff', 
+                  border: '1px solid #bfdbfe', 
+                  padding: '12px', 
+                  marginTop: '12px', 
+                  borderRadius: '4px',
+                  textAlign: 'left'
+                }}>
+                  <p style={{ fontSize: '7pt', color: '#1e40af', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
+                    Informations dans le QR Code :
+                  </p>
+                  <ul style={{ fontSize: '7pt', color: '#1e40af', lineHeight: 1.8, margin: 0, paddingLeft: '15px' }}>
+                    <li>Référence : {transaction.reference}</li>
+                    <li>Montant : {formatAmount(transaction.amount, transaction.currency)}</li>
+                    <li>Vendeur : {transaction.company.commercial_name}</li>
+                    <li>Code TrustRail : {transaction.company.trust_code}</li>
+                    <li>Date : {new Date(transaction.created_at).toLocaleDateString('fr-FR')}</li>
+                    <li>Statut : {getStatusLabel(transaction.status)}</li>
+                    <li>Description : {transaction.description}</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            {/* TrustPass QR Code Section */}
             {transaction.company.trust_pass?.qr_code_url && (
               <div style={{ marginBottom: '20px' }}>
                 <h2 style={{ 
@@ -447,7 +527,7 @@ const ReceiptPage: React.FC = () => {
                   paddingBottom: '6px', 
                   borderBottom: '2px solid #e2e8f0' 
                 }}>
-                  Preuve de Vérification
+                  Vérification du Vendeur
                 </h2>
                 <div style={{ background: '#f8fafc', padding: '20px', textAlign: 'center', borderRadius: '2px' }}>
                   <div style={{ background: 'white', display: 'inline-block', padding: '15px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
