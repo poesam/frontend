@@ -10,7 +10,7 @@ import {
 import NotificationBell from '../../components/NotificationBell';
 
 // Import des pages
-import TrustPassPage from './TrustPassPage';
+import TrustPassPage from './TrustPassSimple';
 import TransactionsPage from './TransactionsPage';
 import VerificationsPage from './VerificationsPage';
 import DisputesPage from './DisputesPage';
