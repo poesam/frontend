@@ -5,7 +5,7 @@ import Pusher from 'pusher-js';
 (window as any).Pusher = Pusher;
 
 // Configuration Echo pour Pusher
-let echo: Echo<any> | null = null;
+let echo: Echo | null = null;
 
 const pusherKey = import.meta.env.VITE_PUSHER_APP_KEY;
 const pusherCluster = import.meta.env.VITE_PUSHER_APP_CLUSTER;
