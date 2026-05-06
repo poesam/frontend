@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Environment Variables</title>
+</head>
+<body>
+    <h1>Debug Environment Variables</h1>
+    <div id="debug-info"></div>
+    
+    <script type="module">
+        const debugInfo = document.getElementById('debug-info');
+        
+        const envVars = {
+            'VITE_API_URL': import.meta.env.VITE_API_URL,
+            'VITE_PUSHER_APP_KEY': import.meta.env.VITE_PUSHER_APP_KEY,
+            'VITE_PUSHER_APP_CLUSTER': import.meta.env.VITE_PUSHER_APP_CLUSTER,
+            'VITE_APP_NAME': import.meta.env.VITE_APP_NAME,
+            'MODE': import.meta.env.MODE,
+            'PROD': import.meta.env.PROD,
+            'DEV': import.meta.env.DEV
+        };
+        
+        let html = '<h2>Variables d\'environnement:</h2><ul>';
+        
+        for (const [key, value] of Object.entries(envVars)) {
+            const status = value ? '✅' : '❌';
+            html += `<li><strong>${key}:</strong> ${status} ${value || 'UNDEFINED'}</li>`;
+        }
+        
+        html += '</ul>';
+        
+        // Test API URL
+        const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+        html += `<h2>Configuration API:</h2>`;
+        html += `<p><strong>URL utilisée:</strong> ${apiUrl}</p>`;
+        html += `<p><strong>Endpoint login:</strong> ${apiUrl}/api/auth/login</p>`;
+        
+        debugInfo.innerHTML = html;
+        
+        console.log('Environment Variables:', envVars);
+    </script>
+</body>
+</html>
