@@ -119,17 +119,29 @@ export default function DisputesPage() {
     }
 
     try {
-      await disputeService.create({
+      console.log('📤 Données envoyées:', {
         transaction_id: parseInt(newDispute.transaction_id),
         type: newDispute.type,
         description: newDispute.description,
       });
+      
+      const response = await disputeService.create({
+        transaction_id: parseInt(newDispute.transaction_id),
+        type: newDispute.type,
+        description: newDispute.description,
+      });
+      
+      console.log('✅ Réponse:', response);
+      
       setShowModal(false);
       setNewDispute({ transaction_id: '', type: 'autre', description: '' });
       loadDisputes();
-    } catch (error) {
-      console.error('Erreur création litige:', error);
-      alert('Erreur lors de la création du litige');
+    } catch (error: any) {
+      console.error('❌ Erreur création litige:', error);
+      console.error('❌ Détails erreur:', error.response?.data);
+      
+      const errorMessage = error.response?.data?.message || 'Erreur lors de la création du litige';
+      alert(errorMessage);
     }
   };
 
