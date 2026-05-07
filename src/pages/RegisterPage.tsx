@@ -125,9 +125,9 @@ export default function RegisterPage() {
       }
     }
     
-    if (step === 2 && formData.role === 'verificateur') {
-      // Si vérificateur, soumettre directement
-      handleSubmit(new Event('submit') as any);
+    // Toujours passer à l'étape 3 pour les entreprises
+    if (step === 2) {
+      setStep(3);
       return;
     }
     
@@ -325,28 +325,12 @@ export default function RegisterPage() {
                       Créez votre TrustPass et gérez vos transactions
                     </span>
                   </label>
+                </div>
 
-                  <label className={`relative flex flex-col p-6 rounded-2xl border-2 cursor-pointer transition-all ${
-                    formData.role === 'verificateur' 
-                      ? 'border-blue-600 bg-blue-50' 
-                      : 'border-slate-200 hover:border-blue-300'
-                  }`}>
-                    <input
-                      type="radio"
-                      name="role"
-                      value="verificateur"
-                      checked={formData.role === 'verificateur'}
-                      onChange={handleChange}
-                      className="sr-only"
-                    />
-                    <CheckCircle className={`w-12 h-12 mb-4 ${
-                      formData.role === 'verificateur' ? 'text-blue-600' : 'text-slate-400'
-                    }`} />
-                    <span className="text-lg font-bold text-slate-900 mb-2">Vérificateur</span>
-                    <span className="text-sm text-slate-600">
-                      Vérifiez les entreprises et aidez la communauté
-                    </span>
-                  </label>
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                  <p className="text-sm text-amber-900">
+                    <strong>ℹ️ Note :</strong> Les comptes Vérificateur et Administrateur sont créés uniquement par l'équipe TrustRail MEA pour des raisons de sécurité.
+                  </p>
                 </div>
 
                 {formData.role === 'entreprise' && (
