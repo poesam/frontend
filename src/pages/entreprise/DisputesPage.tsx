@@ -380,7 +380,7 @@ export default function DisputesPage() {
                   <option value="" className="bg-slate-800">Sélectionnez une transaction</option>
                   {transactions.map((transaction) => (
                     <option key={transaction.id} value={transaction.id} className="bg-slate-800">
-                      #{transaction.id} - {transaction.description} ({transaction.amount} FCFA)
+                      {transaction.description} ({transaction.amount.toLocaleString('fr-FR')} FCFA)
                     </option>
                   ))}
                 </select>
