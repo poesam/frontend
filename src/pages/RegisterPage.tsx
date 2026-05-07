@@ -303,8 +303,8 @@ export default function RegisterPage() {
             {/* Étape 2 : Type de compte */}
             {step === 2 && (
               <div className="space-y-6">
-                <div className="grid md:grid-cols-2 gap-4">
-                  <label className={`relative flex flex-col p-6 rounded-2xl border-2 cursor-pointer transition-all ${
+                <div className="flex justify-center">
+                  <label className={`relative flex flex-col p-6 rounded-2xl border-2 cursor-pointer transition-all max-w-md w-full ${
                     formData.role === 'entreprise' 
                       ? 'border-blue-600 bg-blue-50' 
                       : 'border-slate-200 hover:border-blue-300'
@@ -325,12 +325,6 @@ export default function RegisterPage() {
                       Créez votre TrustPass et gérez vos transactions
                     </span>
                   </label>
-                </div>
-
-                <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl">
-                  <p className="text-sm text-amber-900">
-                    <strong>ℹ️ Note :</strong> Les comptes Vérificateur et Administrateur sont créés uniquement par l'équipe TrustRail MEA pour des raisons de sécurité.
-                  </p>
                 </div>
 
                 {formData.role === 'entreprise' && (
