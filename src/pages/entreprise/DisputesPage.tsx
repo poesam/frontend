@@ -374,7 +374,7 @@ export default function DisputesPage() {
       {/* Modal Nouveau Litige */}
       {showModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="glass-dark max-w-2xl w-full rounded-3xl p-8">
+          <div className="glass-dark max-w-2xl w-full rounded-3xl p-8 max-h-[90vh] overflow-y-auto">
             <div className="flex items-center space-x-3 mb-6">
               <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-xl flex items-center justify-center">
                 <Plus className="w-6 h-6 text-white" />
