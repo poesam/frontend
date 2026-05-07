@@ -8,7 +8,8 @@ import {
 interface Dispute {
   id: number;
   transaction_id: number;
-  reason: string;
+  type: string;
+  description: string;
   status: 'open' | 'in_progress' | 'resolved' | 'escalated';
   created_at: string;
   resolution?: string;
@@ -150,7 +151,7 @@ export default function DisputesPage() {
   };
 
   const filteredDisputes = disputes.filter(d => {
-    const matchesSearch = d.reason.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch = d.description?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || d.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -329,8 +330,8 @@ export default function DisputesPage() {
                   </div>
 
                   <div className="p-4 bg-slate-50 rounded-xl mb-4">
-                    <div className="text-xs font-semibold text-slate-500 mb-1">Raison du litige</div>
-                    <div className="text-sm text-slate-900">{dispute.reason}</div>
+                    <div className="text-xs font-semibold text-slate-500 mb-1">Description du litige</div>
+                    <div className="text-sm text-slate-900">{dispute.description}</div>
                   </div>
 
                   {dispute.resolution && (
@@ -448,7 +449,7 @@ export default function DisputesPage() {
               <button
                 onClick={() => {
                   setShowModal(false);
-                  setNewDispute({ transaction_id: '', reason: '' });
+                  setNewDispute({ transaction_id: '', type: 'autre', description: '' });
                 }}
                 className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors"
               >
