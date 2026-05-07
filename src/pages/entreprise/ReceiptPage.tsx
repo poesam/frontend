@@ -3,6 +3,23 @@ import { useParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { RealQRGenerator } from '../../utils/realQrGenerator';
 
+// Styles pour l'impression PDF
+const printStyles = `
+  @media print {
+    @page {
+      size: A4;
+      margin: 0;
+    }
+    body {
+      margin: 0;
+      padding: 0;
+    }
+    .print\\:hidden {
+      display: none !important;
+    }
+  }
+`;
+
 interface Transaction {
   id: number;
   reference: string;
@@ -88,13 +105,9 @@ const ReceiptPage: React.FC = () => {
     }
   };
 
-  const handleDownloadPDF = () => {
-    const token = localStorage.getItem('token');
-    const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
-    window.open(
-      `${API_URL}/api/transactions/${id}/receipt/download?token=${token}`,
-      '_blank'
-    );
+  const handleDownloadPDF = async () => {
+    // Utiliser l'API d'impression du navigateur pour générer le PDF
+    window.print();
   };
 
   const handlePrint = () => {
@@ -200,21 +213,23 @@ const ReceiptPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 py-6 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Actions Bar - Non imprimable */}
-        <div className="mb-4 flex flex-wrap gap-2 print:hidden">
-          <button
-            onClick={() => navigate('/entreprise/transactions')}
-            className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition"
-          >
-            Retour
-          </button>
-          <button
-            onClick={handleDownloadPDF}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
-          >
-            Télécharger PDF
+    <>
+      <style>{printStyles}</style>
+      <div className="min-h-screen bg-gray-100 py-6 px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Actions Bar - Non imprimable */}
+          <div className="mb-4 flex flex-wrap gap-2 print:hidden">
+            <button
+              onClick={() => navigate('/entreprise/transactions')}
+              className="px-4 py-2 bg-gray-600 text-white text-sm rounded hover:bg-gray-700 transition"
+            >
+              Retour
+            </button>
+            <button
+              onClick={handleDownloadPDF}
+              className="px-4 py-2 bg-blue-600 text-white text-sm rounded hover:bg-blue-700 transition"
+            >
+              Enregistrer en PDF
           </button>
           <button
             onClick={handlePrint}
@@ -535,6 +550,7 @@ const ReceiptPage: React.FC = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 
