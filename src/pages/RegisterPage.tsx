@@ -147,7 +147,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 py-12 relative overflow-hidden">
+    <div className="min-h-screen flex items-center justify-center px-4 sm:px-6 lg:px-8 py-8 sm:py-12 relative overflow-hidden">
       {/* Animated background */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="absolute top-20 left-10 w-72 h-72 bg-primary-400/20 rounded-full blur-3xl animate-float"></div>
@@ -156,7 +156,7 @@ export default function RegisterPage() {
 
       <div className="max-w-2xl w-full relative z-10">
         {/* Logo */}
-        <Link to="/" className="flex items-center justify-center space-x-3 mb-8">
+        <Link to="/" className="flex items-center justify-center space-x-3 mb-6 sm:mb-8">
           <img src="/logo.png" alt="TrustRail MEA" className="h-14 w-auto" />
           <span className="text-3xl font-display font-bold gradient-text">TrustRail MEA</span>
         </Link>
@@ -178,14 +178,14 @@ export default function RegisterPage() {
           </div>
 
           {/* Header */}
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-display font-bold mb-2">
+          <div className="text-center mb-6 sm:mb-8">
+            <h1 className="text-2xl sm:text-3xl font-display font-bold mb-2">
               {step === 1 && 'Informations personnelles'}
               {step === 2 && 'Type de compte'}
               {step === 3 && 'Informations de l\'entreprise'}
               {step === 4 && 'Coordonnées de l\'entreprise'}
             </h1>
-            <p className="text-slate-600">
+            <p className="text-sm sm:text-base text-slate-600">
               {step === 1 && 'Commençons par vos informations de base'}
               {step === 2 && 'Quel type de compte souhaitez-vous créer ?'}
               {step === 3 && 'Parlez-nous de votre entreprise'}
@@ -304,7 +304,7 @@ export default function RegisterPage() {
             {step === 2 && (
               <div className="space-y-6">
                 <div className="flex justify-center">
-                  <label className={`relative flex flex-col p-6 rounded-2xl border-2 cursor-pointer transition-all max-w-md w-full ${
+                  <label className={`relative flex flex-col p-4 sm:p-6 rounded-2xl border-2 cursor-pointer transition-all max-w-md w-full ${
                     formData.role === 'entreprise' 
                       ? 'border-blue-600 bg-blue-50' 
                       : 'border-slate-200 hover:border-blue-300'
