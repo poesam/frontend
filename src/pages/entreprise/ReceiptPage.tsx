@@ -230,132 +230,132 @@ const ReceiptPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Receipt Container - Format A4 */}
-        <div className="bg-white shadow-xl" style={{ maxWidth: '210mm', margin: '0', fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif" }}>
+        {/* Receipt Container - Format A4 - Single Page */}
+        <div className="bg-white shadow-xl" style={{ maxWidth: '210mm', margin: '0', fontFamily: "'Helvetica Neue', Helvetica, Arial, sans-serif", height: '297mm', overflow: 'hidden' }}>
           {/* Header */}
           <div style={{ 
             background: 'linear-gradient(135deg, #1a365d 0%, #2563eb 100%)',
             color: 'white',
-            padding: '25px 40px 20px 40px'
+            padding: '15px 30px 12px 30px'
           }}>
-            <div className="flex justify-between items-start mb-4">
+            <div className="flex justify-between items-start mb-2">
               <div>
-                <h1 style={{ fontSize: '24pt', fontWeight: 300, letterSpacing: '3px', lineHeight: 1, marginBottom: '5px' }}>TRUSTRAIL</h1>
-                <p style={{ fontSize: '8pt', opacity: 0.85, letterSpacing: '1px', fontWeight: 300 }}>Infrastructure de Confiance MEA</p>
+                <h1 style={{ fontSize: '20pt', fontWeight: 300, letterSpacing: '2px', lineHeight: 1, marginBottom: '3px' }}>TRUSTRAIL</h1>
+                <p style={{ fontSize: '7pt', opacity: 0.85, letterSpacing: '0.8px', fontWeight: 300 }}>Infrastructure de Confiance MEA</p>
               </div>
-              <div className="text-right" style={{ fontSize: '8pt', opacity: 0.9, lineHeight: 1.6 }}>
+              <div className="text-right" style={{ fontSize: '7pt', opacity: 0.9, lineHeight: 1.4 }}>
                 <p>Afrique & Moyen-Orient</p>
                 <p>www.trustrail-mea.com</p>
               </div>
             </div>
             <div style={{ 
-              fontSize: '14pt', 
+              fontSize: '12pt', 
               fontWeight: 300, 
-              letterSpacing: '3px', 
+              letterSpacing: '2px', 
               textTransform: 'uppercase',
               borderTop: '1px solid rgba(255,255,255,0.3)',
-              paddingTop: '12px'
+              paddingTop: '8px'
             }}>
               Reçu Digital
             </div>
           </div>
 
-          <div style={{ padding: '25px 40px' }}>
+          <div style={{ padding: '15px 30px' }}>
             {/* Reference */}
             <div style={{ 
               background: '#f8fafc', 
-              borderLeft: '4px solid #2563eb', 
-              padding: '15px 20px', 
-              marginBottom: '20px' 
+              borderLeft: '3px solid #2563eb', 
+              padding: '10px 15px', 
+              marginBottom: '12px' 
             }}>
-              <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 600, marginBottom: '5px' }}>
+              <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 600, marginBottom: '3px' }}>
                 Référence de Transaction
               </p>
-              <p style={{ fontSize: '16pt', color: '#1e293b', fontWeight: 600, fontFamily: "'Courier New', Courier, monospace", letterSpacing: '1px' }}>
+              <p style={{ fontSize: '13pt', color: '#1e293b', fontWeight: 600, fontFamily: "'Courier New', Courier, monospace", letterSpacing: '0.5px' }}>
                 {transaction.reference}
               </p>
             </div>
 
             {/* Meta Information */}
-            <div className="grid grid-cols-3 gap-3" style={{ marginBottom: '20px' }}>
-              <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '2px' }}>
-                <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '5px' }}>
+            <div className="grid grid-cols-3 gap-2" style={{ marginBottom: '12px' }}>
+              <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '2px' }}>
+                <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '3px' }}>
                   Date d'Émission
                 </p>
-                <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500 }}>{formatDate(transaction.created_at)}</p>
+                <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500 }}>{formatDate(transaction.created_at)}</p>
               </div>
               {transaction.paid_at && (
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '2px' }}>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '5px' }}>
+                <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '2px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '3px' }}>
                     Date de Paiement
                   </p>
-                  <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500 }}>{formatDate(transaction.paid_at)}</p>
+                  <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500 }}>{formatDate(transaction.paid_at)}</p>
                 </div>
               )}
               {transaction.delivered_at && (
-                <div style={{ background: '#f8fafc', padding: '12px', borderRadius: '2px' }}>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '5px' }}>
+                <div style={{ background: '#f8fafc', padding: '8px', borderRadius: '2px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '3px' }}>
                     Date de Livraison
                   </p>
-                  <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500 }}>{formatDate(transaction.delivered_at)}</p>
+                  <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500 }}>{formatDate(transaction.delivered_at)}</p>
                 </div>
               )}
             </div>
 
             {/* Seller Information */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <h2 style={{ 
-                fontSize: '9pt', 
+                fontSize: '8pt', 
                 color: '#1e293b', 
                 fontWeight: 700, 
                 textTransform: 'uppercase', 
-                letterSpacing: '1.5px', 
-                marginBottom: '12px', 
-                paddingBottom: '6px', 
-                borderBottom: '2px solid #e2e8f0' 
+                letterSpacing: '1px', 
+                marginBottom: '8px', 
+                paddingBottom: '4px', 
+                borderBottom: '1.5px solid #e2e8f0' 
               }}>
                 Informations du Vendeur
               </h2>
-              <div className="grid grid-cols-2" style={{ gap: '12px 25px' }}>
+              <div className="grid grid-cols-2" style={{ gap: '8px 20px' }}>
                 <div>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                     Nom Commercial
                   </p>
-                  <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>{transaction.company.commercial_name}</p>
+                  <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>{transaction.company.commercial_name}</p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                     Code TrustRail
                   </p>
-                  <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 700, fontFamily: "'Courier New', monospace", textAlign: 'right' }}>
+                  <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 700, fontFamily: "'Courier New', monospace", textAlign: 'right' }}>
                     {transaction.company.trust_code}
                   </p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                     Localisation
                   </p>
-                  <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>
+                  <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>
                     {transaction.company.city}, {transaction.company.country_code}
                   </p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                     Contact
                   </p>
-                  <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>{transaction.company.phone_masked}</p>
+                  <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>{transaction.company.phone_masked}</p>
                 </div>
                 <div>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                     Statut de Vérification
                   </p>
                   <div className="mt-1" style={{ textAlign: 'right' }}>{getVerificationBadge(transaction.company.verification_status)}</div>
                 </div>
                 <div>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                     Score de Confiance
                   </p>
-                  <p className={`font-bold ${getTrustScoreColor(transaction.company.trust_score)}`} style={{ fontSize: '10pt', fontWeight: 700, textAlign: 'right' }}>
+                  <p className={`font-bold ${getTrustScoreColor(transaction.company.trust_score)}`} style={{ fontSize: '8pt', fontWeight: 700, textAlign: 'right' }}>
                     {transaction.company.trust_score}/100
                   </p>
                 </div>
@@ -363,76 +363,76 @@ const ReceiptPage: React.FC = () => {
             </div>
 
             {/* Client Information */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <h2 style={{ 
-                fontSize: '9pt', 
+                fontSize: '8pt', 
                 color: '#1e293b', 
                 fontWeight: 700, 
                 textTransform: 'uppercase', 
-                letterSpacing: '1.5px', 
-                marginBottom: '12px', 
-                paddingBottom: '6px', 
-                borderBottom: '2px solid #e2e8f0' 
+                letterSpacing: '1px', 
+                marginBottom: '8px', 
+                paddingBottom: '4px', 
+                borderBottom: '1.5px solid #e2e8f0' 
               }}>
                 Informations du Client
               </h2>
-              <div className="grid grid-cols-2" style={{ gap: '12px 25px' }}>
+              <div className="grid grid-cols-2" style={{ gap: '8px 20px' }}>
                 <div>
-                  <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                  <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                     Nom
                   </p>
-                  <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>
+                  <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>
                     {transaction.buyer_name || transaction.buyer?.name || 'Client'}
                   </p>
                 </div>
                 {transaction.buyer_phone_masked && (
                   <div>
-                    <p style={{ fontSize: '7pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600, marginBottom: '4px' }}>
+                    <p style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600, marginBottom: '2px' }}>
                       Contact
                     </p>
-                    <p style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>{transaction.buyer_phone_masked}</p>
+                    <p style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500, textAlign: 'right' }}>{transaction.buyer_phone_masked}</p>
                   </div>
                 )}
               </div>
             </div>
 
             {/* Transaction Details */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <h2 style={{ 
-                fontSize: '9pt', 
+                fontSize: '8pt', 
                 color: '#1e293b', 
                 fontWeight: 700, 
                 textTransform: 'uppercase', 
-                letterSpacing: '1.5px', 
-                marginBottom: '12px', 
-                paddingBottom: '6px', 
-                borderBottom: '2px solid #e2e8f0' 
+                letterSpacing: '1px', 
+                marginBottom: '8px', 
+                paddingBottom: '4px', 
+                borderBottom: '1.5px solid #e2e8f0' 
               }}>
                 Détails de la Transaction
               </h2>
-              <div style={{ background: '#f8fafc', padding: '15px 20px', borderRadius: '2px' }}>
-                <div className="flex justify-between items-start" style={{ padding: '10px 0', borderBottom: '1px solid #e2e8f0' }}>
-                  <span style={{ fontSize: '8pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+              <div style={{ background: '#f8fafc', padding: '10px 15px', borderRadius: '2px' }}>
+                <div className="flex justify-between items-start" style={{ padding: '6px 0', borderBottom: '1px solid #e2e8f0' }}>
+                  <span style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600 }}>
                     Description
                   </span>
-                  <span style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>
+                  <span style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>
                     {transaction.description}
                   </span>
                 </div>
-                <div className="flex justify-between items-center" style={{ padding: '10px 0' }}>
-                  <span style={{ fontSize: '8pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                <div className="flex justify-between items-center" style={{ padding: '6px 0' }}>
+                  <span style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600 }}>
                     Statut
                   </span>
-                  <span className={`inline-block px-3 py-1 text-xs font-bold border-2 rounded uppercase tracking-wide ${getStatusColor(transaction.status)}`}>
+                  <span className={`inline-block px-2 py-0.5 text-xs font-bold border-2 rounded uppercase tracking-wide ${getStatusColor(transaction.status)}`}>
                     {getStatusLabel(transaction.status)}
                   </span>
                 </div>
                 {transaction.delivery_proof && (
-                  <div className="flex justify-between items-start" style={{ padding: '10px 0', borderTop: '1px solid #e2e8f0' }}>
-                    <span style={{ fontSize: '8pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.8px', fontWeight: 600 }}>
+                  <div className="flex justify-between items-start" style={{ padding: '6px 0', borderTop: '1px solid #e2e8f0' }}>
+                    <span style={{ fontSize: '6pt', color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.6px', fontWeight: 600 }}>
                       Preuve de Livraison
                     </span>
-                    <span style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>
+                    <span style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 500, textAlign: 'right', maxWidth: '60%' }}>
                       {transaction.delivery_proof}
                     </span>
                   </div>
@@ -443,74 +443,53 @@ const ReceiptPage: React.FC = () => {
             {/* Amount */}
             <div style={{ 
               background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)', 
-              border: '3px solid #10b981', 
-              padding: '25px', 
+              border: '2px solid #10b981', 
+              padding: '15px', 
               textAlign: 'center', 
-              margin: '20px 0' 
+              margin: '12px 0' 
             }}>
-              <p style={{ fontSize: '8pt', color: '#065f46', textTransform: 'uppercase', letterSpacing: '1.5px', fontWeight: 700, marginBottom: '10px' }}>
+              <p style={{ fontSize: '6pt', color: '#065f46', textTransform: 'uppercase', letterSpacing: '1px', fontWeight: 700, marginBottom: '6px' }}>
                 Montant Total
               </p>
-              <p style={{ fontSize: '36pt', color: '#065f46', fontWeight: 700, fontFamily: "'Courier New', Courier, monospace", letterSpacing: '-1px', lineHeight: 1 }}>
+              <p style={{ fontSize: '28pt', color: '#065f46', fontWeight: 700, fontFamily: "'Courier New', Courier, monospace", letterSpacing: '-1px', lineHeight: 1 }}>
                 {formatAmount(transaction.amount, transaction.currency)}
               </p>
             </div>
 
             {/* QR Code Section - Transaction */}
-            <div style={{ marginBottom: '20px' }}>
+            <div style={{ marginBottom: '12px' }}>
               <h2 style={{ 
-                fontSize: '9pt', 
+                fontSize: '8pt', 
                 color: '#1e293b', 
                 fontWeight: 700, 
                 textTransform: 'uppercase', 
-                letterSpacing: '1.5px', 
-                marginBottom: '12px', 
-                paddingBottom: '6px', 
-                borderBottom: '2px solid #e2e8f0' 
+                letterSpacing: '1px', 
+                marginBottom: '8px', 
+                paddingBottom: '4px', 
+                borderBottom: '1.5px solid #e2e8f0' 
               }}>
                 Code QR de la Transaction
               </h2>
-              <div style={{ background: '#f8fafc', padding: '20px', textAlign: 'center', borderRadius: '2px' }}>
-                <div style={{ background: 'white', display: 'inline-block', padding: '15px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
+              <div style={{ background: '#f8fafc', padding: '12px', textAlign: 'center', borderRadius: '2px' }}>
+                <div style={{ background: 'white', display: 'inline-block', padding: '10px', borderRadius: '4px', boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}>
                   {transactionQR ? (
                     <img 
                       src={transactionQR} 
                       alt="QR Code Transaction" 
-                      style={{ width: '200px', height: '200px', display: 'block' }}
+                      style={{ width: '150px', height: '150px', display: 'block' }}
                     />
                   ) : (
-                    <div style={{ width: '200px', height: '200px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
-                      <p style={{ fontSize: '8pt', color: '#64748b' }}>Génération du QR code...</p>
+                    <div style={{ width: '150px', height: '150px', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' }}>
+                      <p style={{ fontSize: '6pt', color: '#64748b' }}>Génération...</p>
                     </div>
                   )}
                 </div>
-                <p style={{ fontSize: '8pt', color: '#64748b', marginTop: '12px', lineHeight: 1.6 }}>
-                  Scannez ce QR code pour vérifier les détails de cette transaction<br />
-                  <span style={{ fontFamily: "'Courier New', monospace", fontWeight: 700, color: '#1e293b' }}>
+                <p style={{ fontSize: '6pt', color: '#64748b', marginTop: '8px', lineHeight: 1.4 }}>
+                  Scannez pour vérifier<br />
+                  <span style={{ fontFamily: "'Courier New', monospace", fontWeight: 700, color: '#1e293b', fontSize: '5pt' }}>
                     {transaction.reference}
                   </span>
                 </p>
-                <div style={{ 
-                  background: '#eff6ff', 
-                  border: '1px solid #bfdbfe', 
-                  padding: '12px', 
-                  marginTop: '12px', 
-                  borderRadius: '4px',
-                  textAlign: 'left'
-                }}>
-                  <p style={{ fontSize: '7pt', color: '#1e40af', fontWeight: 700, marginBottom: '6px', textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                    Informations dans le QR Code :
-                  </p>
-                  <ul style={{ fontSize: '7pt', color: '#1e40af', lineHeight: 1.8, margin: 0, paddingLeft: '15px' }}>
-                    <li>Référence : {transaction.reference}</li>
-                    <li>Montant : {formatAmount(transaction.amount, transaction.currency)}</li>
-                    <li>Vendeur : {transaction.company.commercial_name}</li>
-                    <li>Code TrustRail : {transaction.company.trust_code}</li>
-                    <li>Date : {new Date(transaction.created_at).toLocaleDateString('fr-FR')}</li>
-                    <li>Statut : {getStatusLabel(transaction.status)}</li>
-                    <li>Description : {transaction.description}</li>
-                  </ul>
-                </div>
               </div>
             </div>
 
@@ -518,38 +497,37 @@ const ReceiptPage: React.FC = () => {
           </div>
 
           {/* Footer */}
-          <div style={{ background: '#f8fafc', padding: '20px 40px', borderTop: '4px solid #e2e8f0' }}>
-            <div className="grid grid-cols-2" style={{ gap: '25px', marginBottom: '15px' }}>
+          <div style={{ background: '#f8fafc', padding: '12px 30px', borderTop: '3px solid #e2e8f0' }}>
+            <div className="grid grid-cols-2" style={{ gap: '15px', marginBottom: '8px' }}>
               <div>
-                <h3 style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>
                   TrustRail MEA
                 </h3>
-                <p style={{ fontSize: '8pt', color: '#64748b', lineHeight: 1.6, margin: 0 }}>Infrastructure de confiance pour</p>
-                <p style={{ fontSize: '8pt', color: '#64748b', lineHeight: 1.6, margin: 0 }}>l'Afrique et le Moyen-Orient</p>
-                <p style={{ fontSize: '8pt', color: '#64748b', lineHeight: 1.6, margin: 0, marginTop: '12px' }}>Email: contact@trustrail-mea.com</p>
-                <p style={{ fontSize: '8pt', color: '#64748b', lineHeight: 1.6, margin: 0 }}>Web: www.trustrail-mea.com</p>
+                <p style={{ fontSize: '6pt', color: '#64748b', lineHeight: 1.4, margin: 0 }}>Infrastructure de confiance pour</p>
+                <p style={{ fontSize: '6pt', color: '#64748b', lineHeight: 1.4, margin: 0 }}>l'Afrique et le Moyen-Orient</p>
+                <p style={{ fontSize: '6pt', color: '#64748b', lineHeight: 1.4, margin: 0, marginTop: '6px' }}>Email: contact@trustrail-mea.com</p>
+                <p style={{ fontSize: '6pt', color: '#64748b', lineHeight: 1.4, margin: 0 }}>Web: www.trustrail-mea.com</p>
               </div>
               <div className="text-right">
-                <h3 style={{ fontSize: '9pt', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', marginBottom: '8px' }}>
+                <h3 style={{ fontSize: '7pt', color: '#1e293b', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: '4px' }}>
                   Support Client
                 </h3>
-                <p style={{ fontSize: '8pt', color: '#64748b', lineHeight: 1.6, margin: 0 }}>Pour toute réclamation concernant</p>
-                <p style={{ fontSize: '8pt', color: '#64748b', lineHeight: 1.6, margin: 0 }}>cette transaction, veuillez nous contacter</p>
-                <p style={{ fontSize: '8pt', color: '#64748b', lineHeight: 1.6, margin: 0, marginTop: '12px' }}>
-                  Référence: <span style={{ color: '#1e293b', fontWeight: 600, fontFamily: "'Courier New', Courier, monospace" }}>{transaction.reference}</span>
+                <p style={{ fontSize: '6pt', color: '#64748b', lineHeight: 1.4, margin: 0 }}>Pour toute réclamation concernant</p>
+                <p style={{ fontSize: '6pt', color: '#64748b', lineHeight: 1.4, margin: 0 }}>cette transaction, veuillez nous contacter</p>
+                <p style={{ fontSize: '6pt', color: '#64748b', lineHeight: 1.4, margin: 0, marginTop: '6px' }}>
+                  Réf: <span style={{ color: '#1e293b', fontWeight: 600, fontFamily: "'Courier New', Courier, monospace" }}>{transaction.reference}</span>
                 </p>
               </div>
             </div>
 
-            <div style={{ background: '#eff6ff', borderLeft: '3px solid #3b82f6', padding: '12px 15px', marginTop: '15px' }}>
-              <p style={{ fontSize: '7pt', color: '#1e40af', lineHeight: 1.6, margin: 0 }}>
-                <strong style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px' }}>Document Sécurisé</strong> — Ce reçu digital est protégé par TrustRail MEA. 
-                La référence unique {transaction.reference} permet de vérifier l'authenticité de ce document à tout moment. 
-                Toute modification non autorisée est détectable et constitue une violation des conditions d'utilisation.
+            <div style={{ background: '#eff6ff', borderLeft: '2px solid #3b82f6', padding: '8px 10px', marginTop: '8px' }}>
+              <p style={{ fontSize: '5pt', color: '#1e40af', lineHeight: 1.4, margin: 0 }}>
+                <strong style={{ fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px' }}>Document Sécurisé</strong> — Ce reçu digital est protégé par TrustRail MEA. 
+                La référence unique {transaction.reference} permet de vérifier l'authenticité de ce document à tout moment.
               </p>
             </div>
 
-            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '7pt', marginTop: '12px', paddingTop: '12px', borderTop: '1px solid #e2e8f0', lineHeight: 1.6 }}>
+            <div style={{ textAlign: 'center', color: '#94a3b8', fontSize: '5pt', marginTop: '6px', paddingTop: '6px', borderTop: '1px solid #e2e8f0', lineHeight: 1.4 }}>
               <p style={{ margin: 0 }}>Document généré le {formatDate(new Date().toISOString())} (UTC)</p>
               <p style={{ margin: 0 }}>TrustRail MEA © {new Date().getFullYear()} — Tous droits réservés</p>
             </div>
