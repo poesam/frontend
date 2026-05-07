@@ -27,7 +27,8 @@ export default function DisputesPage() {
   const [showModal, setShowModal] = useState(false);
   const [newDispute, setNewDispute] = useState({
     transaction_id: '',
-    reason: '',
+    type: 'autre',
+    description: '',
   });
 
   useEffect(() => {
@@ -111,7 +112,7 @@ export default function DisputesPage() {
   };
 
   const handleCreateDispute = async () => {
-    if (!newDispute.transaction_id || !newDispute.reason) {
+    if (!newDispute.transaction_id || !newDispute.description) {
       alert('Veuillez remplir tous les champs');
       return;
     }
@@ -119,10 +120,11 @@ export default function DisputesPage() {
     try {
       await disputeService.create({
         transaction_id: parseInt(newDispute.transaction_id),
-        reason: newDispute.reason,
+        type: newDispute.type,
+        description: newDispute.description,
       });
       setShowModal(false);
-      setNewDispute({ transaction_id: '', reason: '' });
+      setNewDispute({ transaction_id: '', type: 'autre', description: '' });
       loadDisputes();
     } catch (error) {
       console.error('Erreur création litige:', error);
@@ -393,11 +395,28 @@ export default function DisputesPage() {
 
               <div>
                 <label className="block text-white/80 text-sm font-medium mb-2">
-                  Raison du litige <span className="text-red-400">*</span>
+                  Type de litige <span className="text-red-400">*</span>
+                </label>
+                <select
+                  value={newDispute.type}
+                  onChange={(e) => setNewDispute({ ...newDispute, type: e.target.value })}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                >
+                  <option value="non_livraison" className="bg-slate-800">Non livraison</option>
+                  <option value="produit_non_conforme" className="bg-slate-800">Produit non conforme</option>
+                  <option value="arnaque" className="bg-slate-800">Arnaque</option>
+                  <option value="mauvais_service" className="bg-slate-800">Mauvais service</option>
+                  <option value="autre" className="bg-slate-800">Autre</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-2">
+                  Description du litige <span className="text-red-400">*</span>
                 </label>
                 <textarea
-                  value={newDispute.reason}
-                  onChange={(e) => setNewDispute({ ...newDispute, reason: e.target.value })}
+                  value={newDispute.description}
+                  onChange={(e) => setNewDispute({ ...newDispute, description: e.target.value })}
                   rows={6}
                   className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
                   placeholder="Décrivez en détail la raison du litige..."
