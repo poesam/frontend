@@ -4,28 +4,36 @@ import { MessageSquare, Search, AlertCircle, CheckCircle, Clock, XCircle, Trendi
 
 interface Dispute {
   id: number;
-  transaction: {
-    id: number;
-    description: string;
-    amount: number;
-  };
-  complainant_company: {
-    name: string;
-  };
-  defendant_company: {
-    name: string;
-  };
-  reason: string;
-  status: 'open' | 'in_progress' | 'resolved' | 'escalated';
+  transaction_id: number;
+  type: string;
+  description: string;
+  status: 'ouvert' | 'en_cours' | 'resolu' | 'ferme' | 'escalade';
   resolution?: string;
   created_at: string;
+  transaction?: {
+    id: number;
+    reference: string;
+    description: string;
+    amount: number;
+    currency: string;
+  };
+  company?: {
+    id: number;
+    commercial_name: string;
+    trust_code: string;
+  };
+  reporter?: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 export default function DisputesPage() {
   const [disputes, setDisputes] = useState<Dispute[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'open' | 'in_progress' | 'resolved' | 'escalated'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'ouvert' | 'en_cours' | 'resolu' | 'ferme' | 'escalade'>('all');
   const [selectedDispute, setSelectedDispute] = useState<Dispute | null>(null);
   const [showModal, setShowModal] = useState(false);
   const [resolution, setResolution] = useState('');
@@ -37,11 +45,29 @@ export default function DisputesPage() {
   const loadDisputes = async () => {
     try {
       setLoading(true);
+      console.log('🔍 Chargement des litiges admin...');
+      
       const response = await disputeService.getAll();
-      const data = response.data.data || response.data || [];
-      setDisputes(Array.isArray(data) ? data : []);
+      console.log('📋 Réponse litiges:', response.data);
+      
+      // Extraire les données de la réponse paginée
+      let disputesData = [];
+      
+      if (response.data.data && Array.isArray(response.data.data.data)) {
+        // Cas 1: response.data.data.data (pagination Laravel)
+        disputesData = response.data.data.data;
+      } else if (response.data.data && Array.isArray(response.data.data)) {
+        // Cas 2: response.data.data (tableau direct)
+        disputesData = response.data.data;
+      } else if (Array.isArray(response.data)) {
+        // Cas 3: response.data (tableau direct)
+        disputesData = response.data;
+      }
+      
+      console.log('✅ Litiges chargés:', disputesData.length);
+      setDisputes(Array.isArray(disputesData) ? disputesData : []);
     } catch (error) {
-      console.error('Erreur chargement litiges:', error);
+      console.error('❌ Erreur chargement litiges:', error);
       setDisputes([]);
     } finally {
       setLoading(false);
@@ -77,21 +103,26 @@ export default function DisputesPage() {
   };
 
   const filteredDisputes = disputes.filter(d => {
-    const matchesSearch = d.complainant_company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         d.defendant_company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         d.reason.toLowerCase().includes(searchTerm.toLowerCase());
+    const companyName = d.company?.commercial_name || '';
+    const reporterName = d.reporter?.name || '';
+    const description = d.description || '';
+    
+    const matchesSearch = companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         reporterName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         description.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filterStatus === 'all' || d.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      open: { bg: 'bg-warning-100', text: 'text-warning-700', icon: AlertCircle, label: 'Ouvert' },
-      in_progress: { bg: 'bg-primary-100', text: 'text-primary-700', icon: Clock, label: 'En cours' },
-      resolved: { bg: 'bg-success-100', text: 'text-success-700', icon: CheckCircle, label: 'Résolu' },
-      escalated: { bg: 'bg-danger-100', text: 'text-danger-700', icon: TrendingUp, label: 'Escaladé' },
+      ouvert: { bg: 'bg-warning-100', text: 'text-warning-700', icon: AlertCircle, label: 'Ouvert' },
+      en_cours: { bg: 'bg-primary-100', text: 'text-primary-700', icon: Clock, label: 'En cours' },
+      resolu: { bg: 'bg-success-100', text: 'text-success-700', icon: CheckCircle, label: 'Résolu' },
+      ferme: { bg: 'bg-slate-100', text: 'text-slate-700', icon: XCircle, label: 'Fermé' },
+      escalade: { bg: 'bg-danger-100', text: 'text-danger-700', icon: TrendingUp, label: 'Escaladé' },
     };
-    const badge = badges[status as keyof typeof badges];
+    const badge = badges[status as keyof typeof badges] || badges.ouvert;
     const Icon = badge.icon;
     
     return (
@@ -112,10 +143,10 @@ export default function DisputesPage() {
 
   const stats = {
     total: disputes.length,
-    open: disputes.filter(d => d.status === 'open').length,
-    inProgress: disputes.filter(d => d.status === 'in_progress').length,
-    resolved: disputes.filter(d => d.status === 'resolved').length,
-    escalated: disputes.filter(d => d.status === 'escalated').length,
+    ouvert: disputes.filter(d => d.status === 'ouvert').length,
+    en_cours: disputes.filter(d => d.status === 'en_cours').length,
+    resolu: disputes.filter(d => d.status === 'resolu').length,
+    escalade: disputes.filter(d => d.status === 'escalade').length,
   };
 
   return (
@@ -147,10 +178,11 @@ export default function DisputesPage() {
             className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all"
           >
             <option value="all">Tous les statuts</option>
-            <option value="open">Ouverts</option>
-            <option value="in_progress">En cours</option>
-            <option value="resolved">Résolus</option>
-            <option value="escalated">Escaladés</option>
+            <option value="ouvert">Ouverts</option>
+            <option value="en_cours">En cours</option>
+            <option value="resolu">Résolus</option>
+            <option value="ferme">Fermés</option>
+            <option value="escalade">Escaladés</option>
           </select>
         </div>
       </div>
@@ -162,19 +194,19 @@ export default function DisputesPage() {
           <div className="text-sm text-slate-600">Total</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-warning-600">{stats.open}</div>
+          <div className="text-2xl font-bold text-warning-600">{stats.ouvert}</div>
           <div className="text-sm text-slate-600">Ouverts</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-primary-600">{stats.inProgress}</div>
+          <div className="text-2xl font-bold text-primary-600">{stats.en_cours}</div>
           <div className="text-sm text-slate-600">En cours</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-success-600">{stats.resolved}</div>
+          <div className="text-2xl font-bold text-success-600">{stats.resolu}</div>
           <div className="text-sm text-slate-600">Résolus</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-danger-600">{stats.escalated}</div>
+          <div className="text-2xl font-bold text-danger-600">{stats.escalade}</div>
           <div className="text-sm text-slate-600">Escaladés</div>
         </div>
       </div>
@@ -204,12 +236,12 @@ export default function DisputesPage() {
 
                   <div className="grid md:grid-cols-2 gap-4 mb-4">
                     <div className="p-3 bg-slate-50 rounded-xl">
-                      <div className="text-xs text-slate-500 mb-1">Plaignant</div>
-                      <div className="font-semibold text-slate-900">{dispute.complainant_company.name}</div>
+                      <div className="text-xs text-slate-500 mb-1">Signalé par</div>
+                      <div className="font-semibold text-slate-900">{dispute.reporter?.name || 'Utilisateur'}</div>
                     </div>
                     <div className="p-3 bg-slate-50 rounded-xl">
-                      <div className="text-xs text-slate-500 mb-1">Défendeur</div>
-                      <div className="font-semibold text-slate-900">{dispute.defendant_company.name}</div>
+                      <div className="text-xs text-slate-500 mb-1">Entreprise concernée</div>
+                      <div className="font-semibold text-slate-900">{dispute.company?.commercial_name || 'N/A'}</div>
                     </div>
                   </div>
 
@@ -217,8 +249,8 @@ export default function DisputesPage() {
                     <div className="flex items-start space-x-2">
                       <AlertCircle className="w-5 h-5 text-warning-600 flex-shrink-0 mt-0.5" />
                       <div>
-                        <div className="text-xs font-semibold text-warning-700 mb-1">Raison du litige:</div>
-                        <div className="text-sm text-warning-900">{dispute.reason}</div>
+                        <div className="text-xs font-semibold text-warning-700 mb-1">Type: {dispute.type}</div>
+                        <div className="text-sm text-warning-900">{dispute.description}</div>
                       </div>
                     </div>
                   </div>
@@ -226,11 +258,11 @@ export default function DisputesPage() {
                   <div className="grid md:grid-cols-2 gap-4 text-sm">
                     <div>
                       <span className="text-slate-500">Transaction:</span>
-                      <span className="ml-2 font-medium text-slate-700">#{dispute.transaction.id}</span>
+                      <span className="ml-2 font-medium text-slate-700">{dispute.transaction?.reference || `#${dispute.transaction_id}`}</span>
                     </div>
                     <div>
                       <span className="text-slate-500">Montant:</span>
-                      <span className="ml-2 font-bold text-slate-900">{formatAmount(dispute.transaction.amount)}</span>
+                      <span className="ml-2 font-bold text-slate-900">{formatAmount(dispute.transaction?.amount || 0)} {dispute.transaction?.currency || 'FCFA'}</span>
                     </div>
                     <div>
                       <span className="text-slate-500">Date:</span>
@@ -288,18 +320,18 @@ export default function DisputesPage() {
 
             <div className="space-y-4 mb-6">
               <div className="p-4 bg-white/10 rounded-xl">
-                <div className="text-white/60 text-sm mb-1">Plaignant</div>
-                <div className="text-white font-semibold">{selectedDispute.complainant_company.name}</div>
+                <div className="text-white/60 text-sm mb-1">Signalé par</div>
+                <div className="text-white font-semibold">{selectedDispute.reporter?.name || 'Utilisateur'}</div>
               </div>
 
               <div className="p-4 bg-white/10 rounded-xl">
-                <div className="text-white/60 text-sm mb-1">Défendeur</div>
-                <div className="text-white font-semibold">{selectedDispute.defendant_company.name}</div>
+                <div className="text-white/60 text-sm mb-1">Entreprise concernée</div>
+                <div className="text-white font-semibold">{selectedDispute.company?.commercial_name || 'N/A'}</div>
               </div>
 
               <div className="p-4 bg-white/10 rounded-xl">
-                <div className="text-white/60 text-sm mb-1">Raison</div>
-                <div className="text-white">{selectedDispute.reason}</div>
+                <div className="text-white/60 text-sm mb-1">Type: {selectedDispute.type}</div>
+                <div className="text-white">{selectedDispute.description}</div>
               </div>
 
               <div>
