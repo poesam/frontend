@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom';
-import { Shield, QrCode, CheckCircle, TrendingUp, Users, Globe, ArrowRight, Sparkles, Search } from 'lucide-react';
+import { Shield, QrCode, CheckCircle, TrendingUp, Users, Globe, ArrowRight, Sparkles, Search, Menu, X } from 'lucide-react';
+import { useState } from 'react';
 
 export default function LandingPage() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   return (
     <div className="min-h-screen">
       {/* Navigation */}
@@ -27,7 +30,15 @@ export default function LandingPage() {
             </div>
 
             <div className="flex items-center space-x-2 sm:space-x-4">
-              <Link to="/login" className="btn-ghost text-sm sm:text-base px-3 sm:px-6 py-2 sm:py-3">
+              {/* Menu hamburger pour mobile */}
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-xl hover:bg-white/50 transition-colors"
+              >
+                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+              </button>
+
+              <Link to="/login" className="hidden sm:block btn-ghost text-sm sm:text-base px-3 sm:px-6 py-2 sm:py-3">
                 Connexion
               </Link>
               <Link to="/register" className="btn-primary text-sm sm:text-base px-3 sm:px-6 py-2 sm:py-3">
@@ -35,6 +46,35 @@ export default function LandingPage() {
               </Link>
             </div>
           </div>
+
+          {/* Menu mobile déroulant */}
+          {mobileMenuOpen && (
+            <div className="md:hidden py-4 border-t border-white/20 animate-slide-up">
+              <div className="space-y-2">
+                <a 
+                  href="#features" 
+                  className="block px-4 py-3 text-slate-700 hover:bg-white/50 rounded-xl font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Fonctionnalités
+                </a>
+                <a 
+                  href="#how-it-works" 
+                  className="block px-4 py-3 text-slate-700 hover:bg-white/50 rounded-xl font-medium transition-colors"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Comment ça marche
+                </a>
+                <Link 
+                  to="/login" 
+                  className="block px-4 py-3 text-slate-700 hover:bg-white/50 rounded-xl font-medium transition-colors sm:hidden"
+                  onClick={() => setMobileMenuOpen(false)}
+                >
+                  Connexion
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </nav>
 

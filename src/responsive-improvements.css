@@ -1,0 +1,363 @@
+/* Améliorations de Responsivité pour TrustRail MEA */
+
+/* ===================================
+   1. TABLEAUX RESPONSIVE
+   =================================== */
+
+/* Wrapper pour scroll horizontal sur mobile */
+.table-responsive {
+  @apply overflow-x-auto -mx-4 sm:mx-0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.table-responsive table {
+  @apply min-w-full;
+}
+
+/* Indicateur de scroll sur mobile */
+.table-responsive::after {
+  content: '';
+  @apply absolute right-0 top-0 bottom-0 w-8 pointer-events-none;
+  background: linear-gradient(to left, rgba(255,255,255,0.9), transparent);
+}
+
+@media (min-width: 768px) {
+  .table-responsive::after {
+    display: none;
+  }
+}
+
+/* ===================================
+   2. CARDS ET CONTAINERS
+   =================================== */
+
+/* Cards avec padding adaptatif */
+.card-mobile {
+  @apply p-4 sm:p-6 md:p-8;
+}
+
+/* Floating cards - masquer sur très petits écrans */
+@media (max-width: 374px) {
+  .floating-card {
+    display: none;
+  }
+}
+
+/* ===================================
+   3. TYPOGRAPHIE RESPONSIVE
+   =================================== */
+
+/* Titres avec line-height adaptatif */
+.heading-responsive {
+  @apply leading-tight sm:leading-tight md:leading-normal;
+}
+
+/* Texte avec ellipsis sur mobile */
+.text-truncate-mobile {
+  @apply truncate sm:whitespace-normal;
+}
+
+/* ===================================
+   4. NAVIGATION ET MENUS
+   =================================== */
+
+/* Menu mobile avec animation */
+.mobile-menu-enter {
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Overlay avec blur */
+.mobile-overlay {
+  @apply fixed inset-0 bg-black/50 backdrop-blur-sm z-40;
+  animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===================================
+   5. FORMULAIRES
+   =================================== */
+
+/* Input avec taille adaptative */
+.input-responsive {
+  @apply text-sm sm:text-base;
+  min-height: 44px; /* Touch-friendly */
+}
+
+/* Boutons touch-friendly */
+.btn-touch {
+  @apply min-h-[44px] min-w-[44px];
+}
+
+/* ===================================
+   6. IMAGES ET MÉDIAS
+   =================================== */
+
+/* Images responsive avec aspect ratio */
+.img-responsive {
+  @apply w-full h-auto;
+  max-width: 100%;
+}
+
+/* QR Code responsive */
+.qr-code-responsive {
+  @apply w-32 h-32 sm:w-40 sm:h-40 md:w-48 md:h-48;
+}
+
+/* Hero image avec hauteur adaptative */
+.hero-image {
+  @apply h-64 sm:h-80 md:h-96 lg:h-[500px] xl:h-[600px];
+  object-fit: cover;
+}
+
+/* ===================================
+   7. GRILLES RESPONSIVE
+   =================================== */
+
+/* Grille auto-responsive */
+.grid-auto-responsive {
+  @apply grid gap-4 sm:gap-6;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+}
+
+/* ===================================
+   8. MODALS ET POPUPS
+   =================================== */
+
+/* Modal responsive */
+.modal-responsive {
+  @apply w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl;
+  @apply mx-4 sm:mx-auto;
+}
+
+/* Dropdown responsive */
+.dropdown-responsive {
+  @apply right-0 sm:right-auto;
+  @apply w-screen sm:w-80 md:w-96;
+  @apply max-h-[70vh] overflow-y-auto;
+}
+
+/* ===================================
+   9. STATS ET DASHBOARDS
+   =================================== */
+
+/* Stat card avec contenu adaptatif */
+.stat-card-responsive {
+  @apply p-4 sm:p-6;
+}
+
+.stat-card-responsive .stat-value {
+  @apply text-2xl sm:text-3xl md:text-4xl;
+}
+
+.stat-card-responsive .stat-label {
+  @apply text-xs sm:text-sm;
+}
+
+/* ===================================
+   10. ANIMATIONS OPTIMISÉES MOBILE
+   =================================== */
+
+/* Réduire les animations sur mobile pour performance */
+@media (max-width: 768px) {
+  .reduce-motion-mobile {
+    animation-duration: 0.2s !important;
+    transition-duration: 0.2s !important;
+  }
+  
+  /* Désactiver les animations lourdes */
+  .float,
+  .float-delayed {
+    animation: none;
+  }
+  
+  /* Simplifier les gradients animés */
+  .gradient-text,
+  .btn-primary {
+    animation: none;
+  }
+}
+
+/* ===================================
+   11. TOUCH GESTURES
+   =================================== */
+
+/* Améliorer le feedback tactile */
+.touch-feedback {
+  @apply active:scale-95 transition-transform duration-100;
+}
+
+/* Zone de touch plus grande */
+.touch-target {
+  @apply relative;
+}
+
+.touch-target::before {
+  content: '';
+  @apply absolute inset-0;
+  padding: 8px;
+  margin: -8px;
+}
+
+/* ===================================
+   12. SCROLLBAR MOBILE
+   =================================== */
+
+/* Scrollbar plus fine sur mobile */
+@media (max-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+}
+
+/* ===================================
+   13. SAFE AREAS (iPhone notch, etc.)
+   =================================== */
+
+/* Padding pour safe areas */
+.safe-area-padding {
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+/* ===================================
+   14. LANDSCAPE MODE
+   =================================== */
+
+/* Ajustements pour mode paysage mobile */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero-section {
+    @apply py-8;
+  }
+  
+  .modal-responsive {
+    @apply max-h-[90vh] overflow-y-auto;
+  }
+}
+
+/* ===================================
+   15. PRINT STYLES
+   =================================== */
+
+@media print {
+  /* Masquer les éléments non nécessaires */
+  .no-print,
+  nav,
+  aside,
+  .sidebar,
+  .mobile-menu,
+  button {
+    display: none !important;
+  }
+  
+  /* Optimiser pour impression */
+  body {
+    @apply bg-white text-black;
+  }
+  
+  .glass,
+  .glass-dark {
+    @apply bg-white border border-gray-300;
+    box-shadow: none;
+  }
+}
+
+/* ===================================
+   16. ACCESSIBILITY
+   =================================== */
+
+/* Focus visible pour navigation clavier */
+.focus-visible-enhanced:focus-visible {
+  @apply outline-4 outline-offset-2 outline-blue-600;
+}
+
+/* Texte lisible sur tous les backgrounds */
+.text-readable {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+/* ===================================
+   17. PERFORMANCE
+   =================================== */
+
+/* Optimisation GPU pour animations */
+.gpu-accelerated {
+  transform: translateZ(0);
+  will-change: transform;
+}
+
+/* Lazy loading pour images */
+.lazy-load {
+  @apply opacity-0 transition-opacity duration-300;
+}
+
+.lazy-load.loaded {
+  @apply opacity-100;
+}
+
+/* ===================================
+   18. DARK MODE SUPPORT (futur)
+   =================================== */
+
+@media (prefers-color-scheme: dark) {
+  /* Prêt pour le dark mode */
+  .dark-mode-ready {
+    /* À implémenter selon les besoins */
+  }
+}
+
+/* ===================================
+   19. REDUCED MOTION
+   =================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ===================================
+   20. UTILITIES CUSTOM
+   =================================== */
+
+/* Container avec max-width responsive */
+.container-responsive {
+  @apply w-full mx-auto;
+  @apply px-4 sm:px-6 lg:px-8;
+  @apply max-w-7xl;
+}
+
+/* Spacing responsive */
+.spacing-responsive {
+  @apply space-y-4 sm:space-y-6 md:space-y-8;
+}
+
+/* Grid gap responsive */
+.gap-responsive {
+  @apply gap-4 sm:gap-6 md:gap-8;
+}

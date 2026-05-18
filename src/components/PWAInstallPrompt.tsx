@@ -63,7 +63,7 @@ export default function PWAInstallPrompt() {
   if (!showPrompt || !deferredPrompt) return null;
 
   return (
-    <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-50 animate-slide-up">
+    <div className="fixed top-4 left-4 right-4 sm:left-auto sm:right-4 sm:max-w-md z-50 animate-slide-down">
       <div className="glass p-6 rounded-2xl shadow-2xl border-2 border-blue-200">
         <button
           onClick={handleDismiss}
