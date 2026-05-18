@@ -37,10 +37,16 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVerified, setFilterVerified] = useState<'all' | 'verifie' | 'en_attente' | 'signale'>('all');
+  const [filterBusinessType, setFilterBusinessType] = useState<string>('all');
+  const [filterRiskLevel, setFilterRiskLevel] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<string>('created_at');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [selectedCompanies, setSelectedCompanies] = useState<number[]>([]);
   
   // États pour les modals
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showBulkActions, setShowBulkActions] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
 
   // Hook pour les notifications
@@ -53,7 +59,16 @@ export default function CompaniesPage() {
   const loadCompanies = async () => {
     try {
       setLoading(true);
-      const response = await companyService.getAll();
+      const params = {
+        search: searchTerm || undefined,
+        verification_status: filterVerified !== 'all' ? filterVerified : undefined,
+        business_type: filterBusinessType !== 'all' ? filterBusinessType : undefined,
+        risk_level: filterRiskLevel !== 'all' ? filterRiskLevel : undefined,
+        sort_by: sortBy,
+        sort_order: sortOrder,
+      };
+      
+      const response = await companyService.getAll(params);
       // Gérer différents formats de réponse paginée
       const data = response.data.data?.data || response.data.data || response.data || [];
       console.log('Companies loaded:', data);
@@ -132,12 +147,99 @@ export default function CompaniesPage() {
     }
   };
 
+  // Gestion de la sélection
+  const handleSelectCompany = (id: number) => {
+    setSelectedCompanies(prev => 
+      prev.includes(id) 
+        ? prev.filter(companyId => companyId !== id)
+        : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (selectedCompanies.length === filteredCompanies.length) {
+      setSelectedCompanies([]);
+    } else {
+      setSelectedCompanies(filteredCompanies.map(c => c.id));
+    }
+  };
+
+  // Actions en lot
+  const handleBulkAction = async (action: string) => {
+    if (selectedCompanies.length === 0) {
+      showErrorNotification('Aucune entreprise sélectionnée');
+      return;
+    }
+
+    const actionLabels: { [key: string]: string } = {
+      'verifie': 'approuver',
+      'refuse': 'refuser',
+      'signale': 'signaler'
+    };
+
+    const actionLabel = actionLabels[action] || action;
+    if (!confirm(`Êtes-vous sûr de vouloir ${actionLabel} ${selectedCompanies.length} entreprise(s) ?`)) return;
+
+    try {
+      setActionLoading(true);
+      
+      // Traiter chaque entreprise sélectionnée
+      const promises = selectedCompanies.map(id => {
+        switch (action) {
+          case 'verifie':
+            return companyService.approve(id);
+          case 'refuse':
+            return companyService.reject(id);
+          case 'signale':
+            return companyService.flag(id);
+          default:
+            return companyService.update(id, { verification_status: action });
+        }
+      });
+
+      await Promise.all(promises);
+      
+      setSelectedCompanies([]);
+      setShowBulkActions(false);
+      loadCompanies();
+      showSuccessNotification(`${selectedCompanies.length} entreprise(s) ${actionLabel}(s) avec succès`);
+    } catch (error) {
+      console.error('Erreur action en lot:', error);
+      showErrorNotification('Erreur lors de l\'action en lot');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Tri des colonnes
+  const handleSort = (column: string) => {
+    if (sortBy === column) {
+      setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortBy(column);
+      setSortOrder('asc');
+    }
+  };
+
+  // Rechargement avec les nouveaux filtres
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      loadCompanies();
+    }, 300); // Debounce de 300ms
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, filterVerified, filterBusinessType, filterRiskLevel, sortBy, sortOrder]);
+
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.commercial_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          company.business_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.trust_code?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesFilter = filterVerified === 'all' || company.verification_status === filterVerified;
-    return matchesSearch && matchesFilter;
+                         company.trust_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesVerification = filterVerified === 'all' || company.verification_status === filterVerified;
+    const matchesBusinessType = filterBusinessType === 'all' || company.business_type === filterBusinessType;
+    const matchesRiskLevel = filterRiskLevel === 'all' || company.risk_level === filterRiskLevel;
+    
+    return matchesSearch && matchesVerification && matchesBusinessType && matchesRiskLevel;
   });
 
   const getScoreColor = (score: number) => {
@@ -195,9 +297,9 @@ export default function CompaniesPage() {
         </div>
       </div>
 
-      {/* Filtres et recherche */}
+      {/* Filtres et recherche améliorés */}
       <div className="glass p-6 rounded-2xl mb-6">
-        <div className="grid md:grid-cols-2 gap-4">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-slate-400" />
             <input
@@ -216,13 +318,81 @@ export default function CompaniesPage() {
               onChange={(e) => setFilterVerified(e.target.value as any)}
               className="flex-1 px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
             >
-              <option value="all">Toutes les entreprises</option>
-              <option value="verifie">Vérifiées uniquement</option>
+              <option value="all">Tous les statuts</option>
+              <option value="verifie">Vérifiées</option>
               <option value="en_attente">En attente</option>
               <option value="signale">Signalées</option>
+              <option value="refuse">Refusées</option>
             </select>
           </div>
+
+          <select
+            value={filterBusinessType}
+            onChange={(e) => setFilterBusinessType(e.target.value)}
+            className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+          >
+            <option value="all">Tous les secteurs</option>
+            <option value="boutique">Boutique</option>
+            <option value="livreur">Livreur</option>
+            <option value="prestataire">Prestataire</option>
+            <option value="artisan">Artisan</option>
+            <option value="marketplace">Marketplace</option>
+            <option value="fintech">Fintech</option>
+            <option value="autre">Autre</option>
+          </select>
+
+          <select
+            value={filterRiskLevel}
+            onChange={(e) => setFilterRiskLevel(e.target.value)}
+            className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
+          >
+            <option value="all">Tous les niveaux de risque</option>
+            <option value="faible">Risque faible</option>
+            <option value="moyen">Risque moyen</option>
+            <option value="eleve">Risque élevé</option>
+          </select>
         </div>
+
+        {/* Actions en lot */}
+        {selectedCompanies.length > 0 && (
+          <div className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-xl">
+            <span className="text-blue-700 font-medium">
+              {selectedCompanies.length} entreprise(s) sélectionnée(s)
+            </span>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => handleBulkAction('verifie')}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-400 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
+              >
+                <Check className="w-4 h-4" />
+                <span>Approuver</span>
+              </button>
+              <button
+                onClick={() => handleBulkAction('refuse')}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
+              >
+                <X className="w-4 h-4" />
+                <span>Refuser</span>
+              </button>
+              <button
+                onClick={() => handleBulkAction('signale')}
+                disabled={actionLoading}
+                className="px-4 py-2 bg-orange-600 hover:bg-orange-700 disabled:bg-orange-400 text-white rounded-lg font-medium transition-colors flex items-center space-x-2"
+              >
+                <AlertTriangle className="w-4 h-4" />
+                <span>Signaler</span>
+              </button>
+              <button
+                onClick={() => setSelectedCompanies([])}
+                className="px-4 py-2 bg-slate-600 hover:bg-slate-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Stats rapides */}
@@ -263,17 +433,81 @@ export default function CompaniesPage() {
             <table className="w-full">
               <thead className="bg-slate-50 border-b border-slate-200">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Entreprise</th>
-                  <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Secteur</th>
+                  <th className="px-6 py-4 text-left">
+                    <input
+                      type="checkbox"
+                      checked={selectedCompanies.length === filteredCompanies.length && filteredCompanies.length > 0}
+                      onChange={handleSelectAll}
+                      className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                    />
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
+                    onClick={() => handleSort('commercial_name')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Entreprise</span>
+                      {sortBy === 'commercial_name' && (
+                        <span className="text-blue-600">
+                          {sortOrder === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-left text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
+                    onClick={() => handleSort('business_type')}
+                  >
+                    <div className="flex items-center space-x-1">
+                      <span>Secteur</span>
+                      {sortBy === 'business_type' && (
+                        <span className="text-blue-600">
+                          {sortOrder === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
                   <th className="px-6 py-4 text-left text-sm font-semibold text-slate-700">Contact</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Score</th>
-                  <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Statut</th>
+                  <th 
+                    className="px-6 py-4 text-center text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
+                    onClick={() => handleSort('trust_score')}
+                  >
+                    <div className="flex items-center justify-center space-x-1">
+                      <span>Score</span>
+                      {sortBy === 'trust_score' && (
+                        <span className="text-blue-600">
+                          {sortOrder === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    className="px-6 py-4 text-center text-sm font-semibold text-slate-700 cursor-pointer hover:bg-slate-100 transition-colors"
+                    onClick={() => handleSort('verification_status')}
+                  >
+                    <div className="flex items-center justify-center space-x-1">
+                      <span>Statut</span>
+                      {sortBy === 'verification_status' && (
+                        <span className="text-blue-600">
+                          {sortOrder === 'asc' ? '↑' : '↓'}
+                        </span>
+                      )}
+                    </div>
+                  </th>
                   <th className="px-6 py-4 text-center text-sm font-semibold text-slate-700">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-200">
                 {filteredCompanies.map((company) => (
-                  <tr key={company.id} className="hover:bg-slate-50 transition-colors">
+                  <tr key={company.id} className={`hover:bg-slate-50 transition-colors ${selectedCompanies.includes(company.id) ? 'bg-blue-50' : ''}`}>
+                    <td className="px-6 py-4">
+                      <input
+                        type="checkbox"
+                        checked={selectedCompanies.includes(company.id)}
+                        onChange={() => handleSelectCompany(company.id)}
+                        className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                    </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
                         <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center">
