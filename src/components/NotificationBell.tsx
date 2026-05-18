@@ -27,7 +27,7 @@ const NotificationBell: React.FC = () => {
     setLoading(true);
     try {
       const response = await notificationService.getNotifications(1, 10);
-      setNotifications(response.data.data);
+      setNotifications(response.data || []);
     } catch (error) {
       console.error('Erreur lors du chargement des notifications:', error);
     } finally {
