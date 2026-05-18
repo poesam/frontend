@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import NotificationPermission from './components/NotificationPermission';
 
 // Pages
 import LandingPage from './pages/LandingPage';
@@ -119,6 +120,7 @@ function App() {
       <AuthProvider>
         <AppRoutes />
         <PWAInstallPrompt />
+        <NotificationPermission />
       </AuthProvider>
     </Router>
   );

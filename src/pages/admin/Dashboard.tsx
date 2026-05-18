@@ -1,5 +1,6 @@
 import { Routes, Route, Link, useLocation, Navigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
+import { useNotifications } from '../../hooks/useNotifications';
 import { 
   LayoutDashboard, Building2, Users, FileCheck, AlertTriangle, BarChart3,
   LogOut, Menu, X, Settings, TrendingUp, ShoppingCart, MessageSquare,
@@ -9,6 +10,7 @@ import {
 import { useState, useEffect } from 'react';
 import dashboardService, { DashboardStats, Activity as ActivityType, Alert as AlertType } from '../../services/dashboardService';
 import NotificationBell from '../../components/NotificationBell';
+import notificationService from '../../services/notificationService';
 
 // Import des pages
 import CompaniesPage from './CompaniesPage';
@@ -22,6 +24,7 @@ import RiskCheckPage from './RiskCheckPage';
 
 function Overview() {
   const { user } = useAuth();
+  const { showSuccessNotification, showErrorNotification, showInfoNotification } = useNotifications();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [activities, setActivities] = useState<ActivityType[]>([]);
   const [alerts, setAlerts] = useState<AlertType[]>([]);
@@ -46,6 +49,19 @@ function Overview() {
       console.error('Erreur lors du chargement du dashboard:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTestNotification = async () => {
+    try {
+      await notificationService.createTestNotification(
+        'Test de notification',
+        'Ceci est une notification de test depuis le dashboard admin'
+      );
+      showSuccessNotification('Notification de test envoyée');
+    } catch (error) {
+      console.error('Erreur test notification:', error);
+      showErrorNotification('Erreur lors de l\'envoi de la notification de test');
     }
   };
 
@@ -144,6 +160,18 @@ function Overview() {
                 <Sparkles className="w-5 h-5 text-purple-600" />
                 <span>Bienvenue, <span className="font-semibold text-slate-900">{user?.name}</span></span>
               </p>
+            </div>
+            
+            {/* Bouton test notification */}
+            <div className="flex items-center space-x-3">
+              <button
+                onClick={handleTestNotification}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-orange-600 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 hover:scale-105 flex items-center space-x-2"
+                title="Tester les notifications"
+              >
+                <Bell className="w-4 h-4" />
+                <span className="hidden sm:inline">Test Notification</span>
+              </button>
             </div>
           </div>
         </div>

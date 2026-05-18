@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { companyService } from '../../services/api';
+import { useNotifications } from '../../hooks/useNotifications';
 import { Building2, Search, Filter, Eye, Edit, Trash2, RefreshCw, Check, X, AlertTriangle, Phone, Mail, Globe, MapPin, Calendar, Star } from 'lucide-react';
 
 interface Company {
@@ -44,6 +45,9 @@ export default function CompaniesPage() {
   const [editForm, setEditForm] = useState<Partial<Company>>({});
   const [actionLoading, setActionLoading] = useState(false);
 
+  // Hook pour les notifications
+  const { showSuccessNotification, showErrorNotification } = useNotifications();
+
   useEffect(() => {
     loadCompanies();
   }, []);
@@ -69,9 +73,10 @@ export default function CompaniesPage() {
       setActionLoading(true);
       await companyService.recalculateScore(id);
       loadCompanies();
+      showSuccessNotification('Score de confiance recalculé avec succès');
     } catch (error) {
       console.error('Erreur recalcul score:', error);
-      alert('Erreur lors du recalcul du score');
+      showErrorNotification('Erreur lors du recalcul du score');
     } finally {
       setActionLoading(false);
     }
@@ -84,9 +89,10 @@ export default function CompaniesPage() {
       setActionLoading(true);
       await companyService.delete(id);
       loadCompanies();
+      showSuccessNotification('Entreprise supprimée avec succès');
     } catch (error) {
       console.error('Erreur suppression:', error);
-      alert('Erreur lors de la suppression');
+      showErrorNotification('Erreur lors de la suppression');
     } finally {
       setActionLoading(false);
     }
@@ -99,7 +105,7 @@ export default function CompaniesPage() {
       setShowDetailsModal(true);
     } catch (error) {
       console.error('Erreur chargement détails:', error);
-      alert('Erreur lors du chargement des détails');
+      showErrorNotification('Erreur lors du chargement des détails');
     }
   };
 
@@ -128,9 +134,10 @@ export default function CompaniesPage() {
       setSelectedCompany(null);
       setEditForm({});
       loadCompanies();
+      showSuccessNotification('Entreprise mise à jour avec succès');
     } catch (error) {
       console.error('Erreur mise à jour:', error);
-      alert('Erreur lors de la mise à jour');
+      showErrorNotification('Erreur lors de la mise à jour');
     } finally {
       setActionLoading(false);
     }
@@ -153,21 +160,25 @@ export default function CompaniesPage() {
       switch (status) {
         case 'verifie':
           await companyService.approve(id);
+          showSuccessNotification('Entreprise approuvée avec succès');
           break;
         case 'refuse':
           await companyService.reject(id);
+          showSuccessNotification('Entreprise refusée');
           break;
         case 'signale':
           await companyService.flag(id);
+          showSuccessNotification('Entreprise signalée');
           break;
         default:
           await companyService.update(id, { verification_status: status });
+          showSuccessNotification('Statut mis à jour');
       }
       
       loadCompanies();
     } catch (error) {
       console.error('Erreur changement statut:', error);
-      alert('Erreur lors du changement de statut');
+      showErrorNotification('Erreur lors du changement de statut');
     } finally {
       setActionLoading(false);
     }
