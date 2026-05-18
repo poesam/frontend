@@ -170,9 +170,9 @@ export default function DisputesPage() {
 
   const stats = {
     total: disputes.length,
-    open: disputes.filter(d => d.status === 'open').length,
-    in_progress: disputes.filter(d => d.status === 'in_progress').length,
-    resolved: disputes.filter(d => d.status === 'resolved').length,
+    open: disputes.filter(d => d.status === 'ouvert').length,
+    in_progress: disputes.filter(d => d.status === 'en_cours').length,
+    resolved: disputes.filter(d => d.status === 'resolu').length,
   };
 
   return (

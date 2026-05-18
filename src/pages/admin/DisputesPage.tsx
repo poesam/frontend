@@ -285,7 +285,7 @@ export default function DisputesPage() {
                   )}
                 </div>
 
-                {(dispute.status === 'open' || dispute.status === 'in_progress') && (
+                {(dispute.status === 'ouvert' || dispute.status === 'en_cours') && (
                   <div className="flex flex-col space-y-2 ml-4">
                     <button
                       onClick={() => {
