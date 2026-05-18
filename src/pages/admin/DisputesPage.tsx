@@ -1,33 +1,7 @@
 import { useState, useEffect } from 'react';
 import { disputeService } from '../../services/api';
+import type { Dispute } from '../../types';
 import { MessageSquare, Search, AlertCircle, CheckCircle, Clock, XCircle, TrendingUp } from 'lucide-react';
-
-interface Dispute {
-  id: number;
-  transaction_id: number;
-  type: string;
-  description: string;
-  status: 'ouvert' | 'en_cours' | 'resolu' | 'ferme' | 'escalade';
-  resolution?: string;
-  created_at: string;
-  transaction?: {
-    id: number;
-    reference: string;
-    description: string;
-    amount: number;
-    currency: string;
-  };
-  company?: {
-    id: number;
-    commercial_name: string;
-    trust_code: string;
-  };
-  reporter?: {
-    id: number;
-    name: string;
-    email: string;
-  };
-}
 
 export default function DisputesPage() {
   const [disputes, setDisputes] = useState<Dispute[]>([]);
