@@ -1,19 +1,34 @@
 import { useState, useEffect } from 'react';
 import { companyService } from '../../services/api';
-import { Building2, Search, Filter, Eye, Edit, Trash2, RefreshCw } from 'lucide-react';
+import { Building2, Search, Filter, Eye, Edit, Trash2, RefreshCw, Check, X, AlertTriangle, Phone, Mail, Globe, MapPin, Calendar, Star } from 'lucide-react';
 
 interface Company {
   id: number;
   commercial_name: string;
+  legal_name?: string;
   business_type: string;
   trust_code: string;
   phone: string;
   phone_masked: string;
   city: string;
   country_code: string;
+  address?: string;
+  description?: string;
+  website?: string;
+  whatsapp?: string;
+  facebook?: string;
+  instagram?: string;
+  tiktok?: string;
   trust_score: number;
   verification_status: string;
+  risk_level: string;
+  activity_start_date?: string;
   created_at: string;
+  user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
 }
 
 export default function CompaniesPage() {
@@ -21,6 +36,13 @@ export default function CompaniesPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterVerified, setFilterVerified] = useState<'all' | 'verifie' | 'en_attente' | 'signale'>('all');
+  
+  // États pour les modals
+  const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editForm, setEditForm] = useState<Partial<Company>>({});
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     loadCompanies();
@@ -44,10 +66,14 @@ export default function CompaniesPage() {
 
   const handleRecalculateScore = async (id: number) => {
     try {
+      setActionLoading(true);
       await companyService.recalculateScore(id);
       loadCompanies();
     } catch (error) {
       console.error('Erreur recalcul score:', error);
+      alert('Erreur lors du recalcul du score');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -55,10 +81,95 @@ export default function CompaniesPage() {
     if (!confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) return;
     
     try {
+      setActionLoading(true);
       await companyService.delete(id);
       loadCompanies();
     } catch (error) {
       console.error('Erreur suppression:', error);
+      alert('Erreur lors de la suppression');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleViewDetails = async (company: Company) => {
+    try {
+      const response = await companyService.getById(company.id);
+      setSelectedCompany(response.data.data);
+      setShowDetailsModal(true);
+    } catch (error) {
+      console.error('Erreur chargement détails:', error);
+      alert('Erreur lors du chargement des détails');
+    }
+  };
+
+  const handleEdit = (company: Company) => {
+    setSelectedCompany(company);
+    setEditForm({
+      commercial_name: company.commercial_name,
+      legal_name: company.legal_name,
+      business_type: company.business_type,
+      city: company.city,
+      address: company.address,
+      phone: company.phone,
+      website: company.website,
+      description: company.description,
+    });
+    setShowEditModal(true);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!selectedCompany) return;
+
+    try {
+      setActionLoading(true);
+      await companyService.update(selectedCompany.id, editForm);
+      setShowEditModal(false);
+      setSelectedCompany(null);
+      setEditForm({});
+      loadCompanies();
+    } catch (error) {
+      console.error('Erreur mise à jour:', error);
+      alert('Erreur lors de la mise à jour');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleChangeStatus = async (id: number, status: string) => {
+    const statusLabels: { [key: string]: string } = {
+      'verifie': 'approuver',
+      'refuse': 'refuser', 
+      'signale': 'signaler'
+    };
+    
+    const action = statusLabels[status] || 'modifier le statut de';
+    if (!confirm(`Êtes-vous sûr de vouloir ${action} cette entreprise ?`)) return;
+
+    try {
+      setActionLoading(true);
+      
+      // Utiliser les services spécialisés
+      switch (status) {
+        case 'verifie':
+          await companyService.approve(id);
+          break;
+        case 'refuse':
+          await companyService.reject(id);
+          break;
+        case 'signale':
+          await companyService.flag(id);
+          break;
+        default:
+          await companyService.update(id, { verification_status: status });
+      }
+      
+      loadCompanies();
+    } catch (error) {
+      console.error('Erreur changement statut:', error);
+      alert('Erreur lors du changement de statut');
+    } finally {
+      setActionLoading(false);
     }
   };
 
@@ -83,10 +194,25 @@ export default function CompaniesPage() {
       en_attente: { label: 'En attente', class: 'bg-amber-100 text-amber-700' },
       signale: { label: 'Signalé', class: 'bg-red-100 text-red-700' },
       refuse: { label: 'Refusé', class: 'bg-gray-100 text-gray-700' },
+      attention: { label: 'Attention', class: 'bg-orange-100 text-orange-700' },
     };
     const badge = badges[status] || { label: status, class: 'bg-gray-100 text-gray-700' };
     return (
       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${badge.class}`}>
+        {badge.label}
+      </span>
+    );
+  };
+
+  const getRiskBadge = (riskLevel: string) => {
+    const badges: { [key: string]: { label: string; class: string } } = {
+      faible: { label: 'Faible', class: 'bg-green-100 text-green-700' },
+      moyen: { label: 'Moyen', class: 'bg-yellow-100 text-yellow-700' },
+      eleve: { label: 'Élevé', class: 'bg-red-100 text-red-700' },
+    };
+    const badge = badges[riskLevel] || { label: riskLevel, class: 'bg-gray-100 text-gray-700' };
+    return (
+      <span className={`px-2 py-1 rounded text-xs font-medium ${badge.class}`}>
         {badge.label}
       </span>
     );
@@ -225,23 +351,62 @@ export default function CompaniesPage() {
                       {getStatusBadge(company.verification_status)}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="flex items-center justify-center space-x-2">
+                      <div className="flex items-center justify-center space-x-1">
                         <button
+                          onClick={() => handleViewDetails(company)}
                           className="p-2 hover:bg-blue-100 text-blue-600 rounded-lg transition-colors"
                           title="Voir détails"
+                          disabled={actionLoading}
                         >
                           <Eye className="w-4 h-4" />
                         </button>
                         <button
+                          onClick={() => handleEdit(company)}
                           className="p-2 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors"
                           title="Modifier"
+                          disabled={actionLoading}
                         >
                           <Edit className="w-4 h-4" />
                         </button>
+                        
+                        {/* Actions de statut */}
+                        {company.verification_status === 'en_attente' && (
+                          <>
+                            <button
+                              onClick={() => handleChangeStatus(company.id, 'verifie')}
+                              className="p-2 hover:bg-green-100 text-green-600 rounded-lg transition-colors"
+                              title="Approuver"
+                              disabled={actionLoading}
+                            >
+                              <Check className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleChangeStatus(company.id, 'refuse')}
+                              className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                              title="Refuser"
+                              disabled={actionLoading}
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                        
+                        {company.verification_status !== 'signale' && (
+                          <button
+                            onClick={() => handleChangeStatus(company.id, 'signale')}
+                            className="p-2 hover:bg-orange-100 text-orange-600 rounded-lg transition-colors"
+                            title="Signaler"
+                            disabled={actionLoading}
+                          >
+                            <AlertTriangle className="w-4 h-4" />
+                          </button>
+                        )}
+                        
                         <button
                           onClick={() => handleDelete(company.id)}
                           className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
                           title="Supprimer"
+                          disabled={actionLoading}
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -251,6 +416,262 @@ export default function CompaniesPage() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Détails */}
+      {showDetailsModal && selectedCompany && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="glass-dark max-w-4xl w-full rounded-3xl p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Détails de l'entreprise</h2>
+              <button
+                onClick={() => setShowDetailsModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* Informations générales */}
+              <div className="space-y-4">
+                <div className="p-4 bg-white/10 rounded-xl">
+                  <h3 className="text-lg font-semibold text-white mb-3">Informations générales</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-white/60">Nom commercial:</span>
+                      <span className="text-white font-medium">{selectedCompany.commercial_name}</span>
+                    </div>
+                    {selectedCompany.legal_name && (
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Raison sociale:</span>
+                        <span className="text-white font-medium">{selectedCompany.legal_name}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between">
+                      <span className="text-white/60">Code TrustRail:</span>
+                      <span className="text-white font-mono">{selectedCompany.trust_code}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/60">Type d'activité:</span>
+                      <span className="text-white font-medium capitalize">{selectedCompany.business_type}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-white/60">Localisation:</span>
+                      <span className="text-white font-medium">{selectedCompany.city}, {selectedCompany.country_code}</span>
+                    </div>
+                    {selectedCompany.address && (
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Adresse:</span>
+                        <span className="text-white font-medium">{selectedCompany.address}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Contact */}
+                <div className="p-4 bg-white/10 rounded-xl">
+                  <h3 className="text-lg font-semibold text-white mb-3">Contact</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Phone className="w-4 h-4 text-white/60" />
+                      <span className="text-white">{selectedCompany.phone}</span>
+                    </div>
+                    {selectedCompany.user?.email && (
+                      <div className="flex items-center space-x-2">
+                        <Mail className="w-4 h-4 text-white/60" />
+                        <span className="text-white">{selectedCompany.user.email}</span>
+                      </div>
+                    )}
+                    {selectedCompany.website && (
+                      <div className="flex items-center space-x-2">
+                        <Globe className="w-4 h-4 text-white/60" />
+                        <a href={selectedCompany.website} target="_blank" rel="noopener noreferrer" className="text-blue-300 hover:text-blue-200">
+                          {selectedCompany.website}
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Statuts et scores */}
+              <div className="space-y-4">
+                <div className="p-4 bg-white/10 rounded-xl">
+                  <h3 className="text-lg font-semibold text-white mb-3">Statuts et scores</h3>
+                  <div className="space-y-3">
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/60">Statut de vérification:</span>
+                      {getStatusBadge(selectedCompany.verification_status)}
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/60">Score de confiance:</span>
+                      <span className={`px-3 py-1 rounded-full text-sm font-semibold ${getScoreColor(selectedCompany.trust_score || 0)}`}>
+                        {selectedCompany.trust_score || 0}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-white/60">Niveau de risque:</span>
+                      {getRiskBadge(selectedCompany.risk_level)}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dates importantes */}
+                <div className="p-4 bg-white/10 rounded-xl">
+                  <h3 className="text-lg font-semibold text-white mb-3">Dates importantes</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center space-x-2">
+                      <Calendar className="w-4 h-4 text-white/60" />
+                      <span className="text-white/60">Inscription:</span>
+                      <span className="text-white">{new Date(selectedCompany.created_at).toLocaleDateString('fr-FR')}</span>
+                    </div>
+                    {selectedCompany.activity_start_date && (
+                      <div className="flex items-center space-x-2">
+                        <Star className="w-4 h-4 text-white/60" />
+                        <span className="text-white/60">Début d'activité:</span>
+                        <span className="text-white">{new Date(selectedCompany.activity_start_date).toLocaleDateString('fr-FR')}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Description */}
+                {selectedCompany.description && (
+                  <div className="p-4 bg-white/10 rounded-xl">
+                    <h3 className="text-lg font-semibold text-white mb-3">Description</h3>
+                    <p className="text-white/80 text-sm">{selectedCompany.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Édition */}
+      {showEditModal && selectedCompany && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="glass-dark max-w-2xl w-full rounded-3xl p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Modifier l'entreprise</h2>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">Nom commercial</label>
+                  <input
+                    type="text"
+                    value={editForm.commercial_name || ''}
+                    onChange={(e) => setEditForm({...editForm, commercial_name: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">Raison sociale</label>
+                  <input
+                    type="text"
+                    value={editForm.legal_name || ''}
+                    onChange={(e) => setEditForm({...editForm, legal_name: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">Type d'activité</label>
+                  <select
+                    value={editForm.business_type || ''}
+                    onChange={(e) => setEditForm({...editForm, business_type: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  >
+                    <option value="boutique">Boutique</option>
+                    <option value="livreur">Livreur</option>
+                    <option value="prestataire">Prestataire</option>
+                    <option value="artisan">Artisan</option>
+                    <option value="marketplace">Marketplace</option>
+                    <option value="fintech">Fintech</option>
+                    <option value="autre">Autre</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">Ville</label>
+                  <input
+                    type="text"
+                    value={editForm.city || ''}
+                    onChange={(e) => setEditForm({...editForm, city: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-2">Adresse</label>
+                <input
+                  type="text"
+                  value={editForm.address || ''}
+                  onChange={(e) => setEditForm({...editForm, address: e.target.value})}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                />
+              </div>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">Téléphone</label>
+                  <input
+                    type="tel"
+                    value={editForm.phone || ''}
+                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/80 text-sm font-medium mb-2">Site web</label>
+                  <input
+                    type="url"
+                    value={editForm.website || ''}
+                    onChange={(e) => setEditForm({...editForm, website: e.target.value})}
+                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/80 text-sm font-medium mb-2">Description</label>
+                <textarea
+                  value={editForm.description || ''}
+                  onChange={(e) => setEditForm({...editForm, description: e.target.value})}
+                  rows={4}
+                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center space-x-3 mt-6">
+              <button
+                onClick={handleSaveEdit}
+                disabled={actionLoading}
+                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-semibold transition-colors"
+              >
+                {actionLoading ? 'Enregistrement...' : 'Enregistrer'}
+              </button>
+              <button
+                onClick={() => setShowEditModal(false)}
+                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors"
+              >
+                Annuler
+              </button>
+            </div>
           </div>
         </div>
       )}

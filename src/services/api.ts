@@ -82,6 +82,16 @@ export const companyService = {
   
   recalculateScore: (id: number) =>
     api.post(`/companies/${id}/recalculate-score`),
+  
+  // Actions de statut
+  approve: (id: number) =>
+    api.put(`/companies/${id}`, { verification_status: 'verifie' }),
+  
+  reject: (id: number) =>
+    api.put(`/companies/${id}`, { verification_status: 'refuse' }),
+  
+  flag: (id: number) =>
+    api.put(`/companies/${id}`, { verification_status: 'signale' }),
 };
 
 export const transactionService = {
