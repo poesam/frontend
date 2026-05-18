@@ -281,6 +281,19 @@ export default function CompaniesPage() {
     showInfoNotification('Export Excel disponible prochainement');
   };
 
+  // Filtrage des entreprises
+  const filteredCompanies = companies.filter(company => {
+    const matchesSearch = company.commercial_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.business_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.trust_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         company.city?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesVerification = filterVerified === 'all' || company.verification_status === filterVerified;
+    const matchesBusinessType = filterBusinessType === 'all' || company.business_type === filterBusinessType;
+    const matchesRiskLevel = filterRiskLevel === 'all' || company.risk_level === filterRiskLevel;
+    
+    return matchesSearch && matchesVerification && matchesBusinessType && matchesRiskLevel;
+  });
+
   // Statistiques avancées
   const advancedStats = {
     total: filteredCompanies.length,
@@ -298,18 +311,6 @@ export default function CompaniesPage() {
       return acc;
     }, {} as Record<string, number>)
   };
-
-  const filteredCompanies = companies.filter(company => {
-    const matchesSearch = company.commercial_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.business_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.trust_code?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         company.city?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesVerification = filterVerified === 'all' || company.verification_status === filterVerified;
-    const matchesBusinessType = filterBusinessType === 'all' || company.business_type === filterBusinessType;
-    const matchesRiskLevel = filterRiskLevel === 'all' || company.risk_level === filterRiskLevel;
-    
-    return matchesSearch && matchesVerification && matchesBusinessType && matchesRiskLevel;
-  });
 
   const getScoreColor = (score: number) => {
     if (score >= 80) return 'text-emerald-600 bg-emerald-100';
