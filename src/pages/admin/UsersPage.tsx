@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Users, Search, Shield, UserCheck, Building2, Mail, Phone, Calendar } from 'lucide-react';
+import { Users, Search, Shield, UserCheck, Building2, Mail, Phone, Calendar, X, MapPin, Globe, Star, Activity, TrendingUp, AlertCircle } from 'lucide-react';
 import api from '../../services/api';
 
 interface User {
@@ -7,10 +7,24 @@ interface User {
   name: string;
   email: string;
   role: string;
+  phone?: string;
+  country_code: string;
+  language: string;
+  is_active: boolean;
+  last_login_at?: string;
   created_at: string;
   company?: {
-    name: string;
+    id: number;
+    commercial_name: string;
+    trust_code: string;
     trust_score: number;
+    verification_status: string;
+    business_type: string;
+    city: string;
+    phone: string;
+    website?: string;
+    completed_transactions: number;
+    disputes_count: number;
   };
 }
 
@@ -19,6 +33,9 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterRole, setFilterRole] = useState<'all' | 'admin' | 'verificateur' | 'entreprise'>('all');
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(false);
 
   useEffect(() => {
     loadUsers();
@@ -46,6 +63,44 @@ export default function UsersPage() {
       console.error('Erreur chargement utilisateurs:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewProfile = async (user: User) => {
+    try {
+      setProfileLoading(true);
+      setShowProfileModal(true);
+      
+      // Charger les détails complets de l'utilisateur
+      const token = localStorage.getItem('token');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
+      
+      // Si c'est une entreprise, charger aussi les détails de l'entreprise
+      if (user.role === 'entreprise' && user.company) {
+        const companyResponse = await fetch(`${API_URL}/api/companies/${user.company.id}`, {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Accept': 'application/json',
+          }
+        });
+        
+        const companyResult = await companyResponse.json();
+        if (companyResult.success) {
+          setSelectedUser({
+            ...user,
+            company: companyResult.data
+          });
+        } else {
+          setSelectedUser(user);
+        }
+      } else {
+        setSelectedUser(user);
+      }
+    } catch (error) {
+      console.error('Erreur chargement profil:', error);
+      setSelectedUser(user);
+    } finally {
+      setProfileLoading(false);
     }
   };
 
@@ -198,7 +253,7 @@ export default function UsersPage() {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-2">
                             <Building2 className="w-4 h-4 text-primary-600" />
-                            <span className="text-sm font-medium text-slate-700">{user.company.name}</span>
+                            <span className="text-sm font-medium text-slate-700">{user.company.commercial_name}</span>
                           </div>
                           <span className="text-sm font-bold text-primary-600">
                             Score: {user.company.trust_score}
@@ -210,13 +265,204 @@ export default function UsersPage() {
                 </div>
 
                 <div className="flex items-center space-x-2">
-                  <button className="px-4 py-2 bg-primary-100 text-primary-700 rounded-xl hover:bg-primary-200 transition-colors font-medium">
+                  <button 
+                    onClick={() => handleViewProfile(user)}
+                    className="px-4 py-2 bg-primary-100 text-primary-700 rounded-xl hover:bg-primary-200 transition-colors font-medium"
+                  >
                     Voir profil
                   </button>
                 </div>
               </div>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Modal Profil Utilisateur */}
+      {showProfileModal && selectedUser && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="glass-dark max-w-4xl w-full rounded-3xl p-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold text-white">Profil Utilisateur</h2>
+              <button
+                onClick={() => setShowProfileModal(false)}
+                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+              >
+                <X className="w-6 h-6 text-white" />
+              </button>
+            </div>
+
+            {profileLoading ? (
+              <div className="text-center py-12">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-white mx-auto mb-4"></div>
+                <p className="text-white/60">Chargement du profil...</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* En-tête du profil */}
+                <div className="flex items-start space-x-6 p-6 bg-white/10 rounded-xl">
+                  <div className={`w-20 h-20 rounded-2xl flex items-center justify-center ${
+                    selectedUser.role === 'admin' ? 'bg-gradient-to-br from-accent-600 to-pink-600' :
+                    selectedUser.role === 'verificateur' ? 'bg-gradient-to-br from-success-600 to-emerald-600' :
+                    'bg-gradient-to-br from-primary-600 to-accent-600'
+                  }`}>
+                    <span className="text-white text-3xl font-bold">{selectedUser.name.charAt(0)}</span>
+                  </div>
+
+                  <div className="flex-1">
+                    <h3 className="text-2xl font-bold text-white mb-2">{selectedUser.name}</h3>
+                    <div className="flex items-center space-x-3 mb-3">
+                      {getRoleBadge(selectedUser.role)}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        selectedUser.is_active 
+                          ? 'bg-green-100 text-green-700' 
+                          : 'bg-red-100 text-red-700'
+                      }`}>
+                        {selectedUser.is_active ? 'Actif' : 'Inactif'}
+                      </span>
+                    </div>
+                    <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <div className="flex items-center space-x-2 text-white/80">
+                        <Mail className="w-4 h-4" />
+                        <span>{selectedUser.email}</span>
+                      </div>
+                      {selectedUser.phone && (
+                        <div className="flex items-center space-x-2 text-white/80">
+                          <Phone className="w-4 h-4" />
+                          <span>{selectedUser.phone}</span>
+                        </div>
+                      )}
+                      <div className="flex items-center space-x-2 text-white/80">
+                        <MapPin className="w-4 h-4" />
+                        <span>{selectedUser.country_code}</span>
+                      </div>
+                      <div className="flex items-center space-x-2 text-white/80">
+                        <Globe className="w-4 h-4" />
+                        <span>{selectedUser.language}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations générales */}
+                <div className="grid md:grid-cols-2 gap-6">
+                  <div className="p-4 bg-white/10 rounded-xl">
+                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
+                      <Calendar className="w-5 h-5" />
+                      <span>Dates importantes</span>
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Inscription:</span>
+                        <span className="text-white font-medium">
+                          {new Date(selectedUser.created_at).toLocaleDateString('fr-FR')}
+                        </span>
+                      </div>
+                      {selectedUser.last_login_at && (
+                        <div className="flex justify-between">
+                          <span className="text-white/60">Dernière connexion:</span>
+                          <span className="text-white font-medium">
+                            {new Date(selectedUser.last_login_at).toLocaleDateString('fr-FR')}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-white/10 rounded-xl">
+                    <h4 className="text-lg font-semibold text-white mb-3 flex items-center space-x-2">
+                      <Activity className="w-5 h-5" />
+                      <span>Statistiques</span>
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-white/60">ID Utilisateur:</span>
+                        <span className="text-white font-mono">#{selectedUser.id}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-white/60">Statut:</span>
+                        <span className={`font-medium ${selectedUser.is_active ? 'text-green-400' : 'text-red-400'}`}>
+                          {selectedUser.is_active ? 'Compte actif' : 'Compte inactif'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Informations de l'entreprise (si applicable) */}
+                {selectedUser.role === 'entreprise' && selectedUser.company && (
+                  <div className="p-6 bg-white/10 rounded-xl">
+                    <h4 className="text-lg font-semibold text-white mb-4 flex items-center space-x-2">
+                      <Building2 className="w-5 h-5" />
+                      <span>Entreprise associée</span>
+                    </h4>
+
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Nom commercial</div>
+                          <div className="text-white font-semibold">{selectedUser.company.commercial_name}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Code TrustRail</div>
+                          <div className="text-white font-mono">{selectedUser.company.trust_code}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Type d'activité</div>
+                          <div className="text-white capitalize">{selectedUser.company.business_type}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Localisation</div>
+                          <div className="text-white">{selectedUser.company.city}</div>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Score de confiance</div>
+                          <div className="flex items-center space-x-2">
+                            <Star className="w-5 h-5 text-yellow-400" />
+                            <span className="text-white font-bold text-xl">{selectedUser.company.trust_score}</span>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Statut de vérification</div>
+                          <div className="text-white capitalize">{selectedUser.company.verification_status}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Transactions complétées</div>
+                          <div className="text-white font-semibold">{selectedUser.company.completed_transactions}</div>
+                        </div>
+                        <div>
+                          <div className="text-white/60 text-sm mb-1">Litiges</div>
+                          <div className="flex items-center space-x-2">
+                            <AlertCircle className={`w-4 h-4 ${selectedUser.company.disputes_count > 0 ? 'text-red-400' : 'text-green-400'}`} />
+                            <span className="text-white font-semibold">{selectedUser.company.disputes_count}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {selectedUser.company.website && (
+                      <div className="mt-4 pt-4 border-t border-white/20">
+                        <div className="flex items-center space-x-2">
+                          <Globe className="w-4 h-4 text-white/60" />
+                          <a 
+                            href={selectedUser.company.website} 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="text-blue-300 hover:text-blue-200 underline"
+                          >
+                            {selectedUser.company.website}
+                          </a>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

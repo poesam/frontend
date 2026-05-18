@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { companyService } from '../../services/api';
 import { useNotifications } from '../../hooks/useNotifications';
-import { Building2, Search, Filter, Eye, RefreshCw, Check, X, AlertTriangle, Phone, Mail, Globe, MapPin, Calendar, Star } from 'lucide-react';
+import { Building2, Search, Filter, Eye, RefreshCw, Check, X, AlertTriangle, Phone, Mail, Globe, MapPin, Calendar, Star, Download, BarChart3, History } from 'lucide-react';
 
 interface Company {
   id: number;
@@ -50,7 +50,7 @@ export default function CompaniesPage() {
   const [actionLoading, setActionLoading] = useState(false);
 
   // Hook pour les notifications
-  const { showSuccessNotification, showErrorNotification } = useNotifications();
+  const { showSuccessNotification, showErrorNotification, showInfoNotification } = useNotifications();
 
   useEffect(() => {
     loadCompanies();
@@ -230,6 +230,75 @@ export default function CompaniesPage() {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, filterVerified, filterBusinessType, filterRiskLevel, sortBy, sortOrder]);
 
+  // Export des données
+  const handleExport = (format: 'csv' | 'excel') => {
+    try {
+      const dataToExport = filteredCompanies.map(company => ({
+        'Code TrustRail': company.trust_code,
+        'Nom Commercial': company.commercial_name,
+        'Raison Sociale': company.legal_name || '',
+        'Type d\'Activité': company.business_type,
+        'Ville': company.city,
+        'Pays': company.country_code,
+        'Téléphone': company.phone_masked,
+        'Score de Confiance': company.trust_score,
+        'Niveau de Risque': company.risk_level,
+        'Statut de Vérification': company.verification_status,
+        'Date d\'Inscription': new Date(company.created_at).toLocaleDateString('fr-FR'),
+        'Propriétaire': company.user?.name || '',
+        'Email': company.user?.email || ''
+      }));
+
+      if (format === 'csv') {
+        exportToCSV(dataToExport, 'entreprises-trustrail');
+      } else {
+        exportToExcel(dataToExport, 'entreprises-trustrail');
+      }
+
+      showSuccessNotification(`Export ${format.toUpperCase()} généré avec succès`);
+    } catch (error) {
+      console.error('Erreur export:', error);
+      showErrorNotification('Erreur lors de l\'export');
+    }
+  };
+
+  const exportToCSV = (data: any[], filename: string) => {
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+      headers.join(','),
+      ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `${filename}-${new Date().toISOString().split('T')[0]}.csv`;
+    link.click();
+  };
+
+  const exportToExcel = (data: any[], filename: string) => {
+    // Simulation d'export Excel (nécessiterait une bibliothèque comme xlsx)
+    showInfoNotification('Export Excel disponible prochainement');
+  };
+
+  // Statistiques avancées
+  const advancedStats = {
+    total: filteredCompanies.length,
+    verified: filteredCompanies.filter(c => c.verification_status === 'verifie').length,
+    pending: filteredCompanies.filter(c => c.verification_status === 'en_attente').length,
+    flagged: filteredCompanies.filter(c => c.verification_status === 'signale').length,
+    rejected: filteredCompanies.filter(c => c.verification_status === 'refuse').length,
+    avgScore: filteredCompanies.length > 0 
+      ? Math.round(filteredCompanies.reduce((acc, c) => acc + (c.trust_score || 0), 0) / filteredCompanies.length) 
+      : 0,
+    highRisk: filteredCompanies.filter(c => c.risk_level === 'eleve').length,
+    lowRisk: filteredCompanies.filter(c => c.risk_level === 'faible').length,
+    byBusinessType: filteredCompanies.reduce((acc, c) => {
+      acc[c.business_type] = (acc[c.business_type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>)
+  };
+
   const filteredCompanies = companies.filter(company => {
     const matchesSearch = company.commercial_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          company.business_type?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -293,7 +362,38 @@ export default function CompaniesPage() {
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-display font-bold mb-2">Gestion des Entreprises</h1>
-          <p className="text-slate-600">{companies.length} entreprises enregistrées</p>
+          <p className="text-slate-600">{companies.length} entreprises enregistrées • {filteredCompanies.length} affichées</p>
+        </div>
+        
+        {/* Boutons d'actions */}
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => handleExport('csv')}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-xl transition-colors flex items-center space-x-2"
+            title="Exporter en CSV"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">CSV</span>
+          </button>
+          
+          <button
+            onClick={() => handleExport('excel')}
+            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-xl transition-colors flex items-center space-x-2"
+            title="Exporter en Excel"
+          >
+            <Download className="w-4 h-4" />
+            <span className="hidden sm:inline">Excel</span>
+          </button>
+          
+          <button
+            onClick={loadCompanies}
+            disabled={loading}
+            className="px-4 py-2 bg-slate-600 hover:bg-slate-700 disabled:bg-slate-400 text-white font-semibold rounded-xl transition-colors flex items-center space-x-2"
+            title="Actualiser"
+          >
+            <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">Actualiser</span>
+          </button>
         </div>
       </div>
 
@@ -395,23 +495,47 @@ export default function CompaniesPage() {
         )}
       </div>
 
-      {/* Stats rapides */}
-      <div className="grid md:grid-cols-4 gap-4 mb-6">
+      {/* Stats rapides améliorées */}
+      <div className="grid md:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold gradient-text">{stats.total}</div>
-          <div className="text-sm text-slate-600">Total</div>
+          <div className="text-2xl font-bold gradient-text">{advancedStats.total}</div>
+          <div className="text-sm text-slate-600">Total affiché</div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-emerald-600">{stats.verified}</div>
+          <div className="text-2xl font-bold text-emerald-600">{advancedStats.verified}</div>
           <div className="text-sm text-slate-600">Vérifiées</div>
+          <div className="text-xs text-emerald-600">
+            {advancedStats.total > 0 ? Math.round((advancedStats.verified / advancedStats.total) * 100) : 0}%
+          </div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-amber-600">{stats.pending}</div>
+          <div className="text-2xl font-bold text-amber-600">{advancedStats.pending}</div>
           <div className="text-sm text-slate-600">En attente</div>
+          <div className="text-xs text-amber-600">
+            {advancedStats.total > 0 ? Math.round((advancedStats.pending / advancedStats.total) * 100) : 0}%
+          </div>
         </div>
         <div className="glass p-4 rounded-xl">
-          <div className="text-2xl font-bold text-blue-600">{stats.avgScore}</div>
+          <div className="text-2xl font-bold text-red-600">{advancedStats.flagged}</div>
+          <div className="text-sm text-slate-600">Signalées</div>
+          <div className="text-xs text-red-600">
+            {advancedStats.total > 0 ? Math.round((advancedStats.flagged / advancedStats.total) * 100) : 0}%
+          </div>
+        </div>
+        <div className="glass p-4 rounded-xl">
+          <div className="text-2xl font-bold text-blue-600">{advancedStats.avgScore}</div>
           <div className="text-sm text-slate-600">Score moyen</div>
+          <div className="text-xs text-blue-600">
+            Risque élevé: {advancedStats.highRisk}
+          </div>
+        </div>
+        <div className="glass p-4 rounded-xl">
+          <div className="text-2xl font-bold text-purple-600">{Object.keys(advancedStats.byBusinessType).length}</div>
+          <div className="text-sm text-slate-600">Secteurs</div>
+          <div className="text-xs text-purple-600">
+            {Object.entries(advancedStats.byBusinessType)
+              .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A'}
+          </div>
         </div>
       </div>
 
