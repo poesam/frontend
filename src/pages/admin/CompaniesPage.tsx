@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { companyService } from '../../services/api';
 import { useNotifications } from '../../hooks/useNotifications';
-import { Building2, Search, Filter, Eye, Edit, Trash2, RefreshCw, Check, X, AlertTriangle, Phone, Mail, Globe, MapPin, Calendar, Star } from 'lucide-react';
+import { Building2, Search, Filter, Eye, RefreshCw, Check, X, AlertTriangle, Phone, Mail, Globe, MapPin, Calendar, Star } from 'lucide-react';
 
 interface Company {
   id: number;
@@ -41,8 +41,6 @@ export default function CompaniesPage() {
   // États pour les modals
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editForm, setEditForm] = useState<Partial<Company>>({});
   const [actionLoading, setActionLoading] = useState(false);
 
   // Hook pour les notifications
@@ -82,22 +80,6 @@ export default function CompaniesPage() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm('Êtes-vous sûr de vouloir supprimer cette entreprise ?')) return;
-    
-    try {
-      setActionLoading(true);
-      await companyService.delete(id);
-      loadCompanies();
-      showSuccessNotification('Entreprise supprimée avec succès');
-    } catch (error) {
-      console.error('Erreur suppression:', error);
-      showErrorNotification('Erreur lors de la suppression');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
   const handleViewDetails = async (company: Company) => {
     try {
       const response = await companyService.getById(company.id);
@@ -106,40 +88,6 @@ export default function CompaniesPage() {
     } catch (error) {
       console.error('Erreur chargement détails:', error);
       showErrorNotification('Erreur lors du chargement des détails');
-    }
-  };
-
-  const handleEdit = (company: Company) => {
-    setSelectedCompany(company);
-    setEditForm({
-      commercial_name: company.commercial_name,
-      legal_name: company.legal_name,
-      business_type: company.business_type,
-      city: company.city,
-      address: company.address,
-      phone: company.phone,
-      website: company.website,
-      description: company.description,
-    });
-    setShowEditModal(true);
-  };
-
-  const handleSaveEdit = async () => {
-    if (!selectedCompany) return;
-
-    try {
-      setActionLoading(true);
-      await companyService.update(selectedCompany.id, editForm);
-      setShowEditModal(false);
-      setSelectedCompany(null);
-      setEditForm({});
-      loadCompanies();
-      showSuccessNotification('Entreprise mise à jour avec succès');
-    } catch (error) {
-      console.error('Erreur mise à jour:', error);
-      showErrorNotification('Erreur lors de la mise à jour');
-    } finally {
-      setActionLoading(false);
     }
   };
 
@@ -371,16 +319,8 @@ export default function CompaniesPage() {
                         >
                           <Eye className="w-4 h-4" />
                         </button>
-                        <button
-                          onClick={() => handleEdit(company)}
-                          className="p-2 hover:bg-cyan-100 text-cyan-600 rounded-lg transition-colors"
-                          title="Modifier"
-                          disabled={actionLoading}
-                        >
-                          <Edit className="w-4 h-4" />
-                        </button>
                         
-                        {/* Actions de statut */}
+                        {/* Actions de statut uniquement */}
                         {company.verification_status === 'en_attente' && (
                           <>
                             <button
@@ -412,15 +352,6 @@ export default function CompaniesPage() {
                             <AlertTriangle className="w-4 h-4" />
                           </button>
                         )}
-                        
-                        <button
-                          onClick={() => handleDelete(company.id)}
-                          className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
-                          title="Supprimer"
-                          disabled={actionLoading}
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
                       </div>
                     </td>
                   </tr>
@@ -560,132 +491,6 @@ export default function CompaniesPage() {
             </div>
           </div>
         </div>
-      )}
-
-      {/* Modal Édition */}
-      {showEditModal && selectedCompany && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="glass-dark max-w-2xl w-full rounded-3xl p-8 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-white">Modifier l'entreprise</h2>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-              >
-                <X className="w-6 h-6 text-white" />
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white/80 text-sm font-medium mb-2">Nom commercial</label>
-                  <input
-                    type="text"
-                    value={editForm.commercial_name || ''}
-                    onChange={(e) => setEditForm({...editForm, commercial_name: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-white/80 text-sm font-medium mb-2">Raison sociale</label>
-                  <input
-                    type="text"
-                    value={editForm.legal_name || ''}
-                    onChange={(e) => setEditForm({...editForm, legal_name: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white/80 text-sm font-medium mb-2">Type d'activité</label>
-                  <select
-                    value={editForm.business_type || ''}
-                    onChange={(e) => setEditForm({...editForm, business_type: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                  >
-                    <option value="boutique">Boutique</option>
-                    <option value="livreur">Livreur</option>
-                    <option value="prestataire">Prestataire</option>
-                    <option value="artisan">Artisan</option>
-                    <option value="marketplace">Marketplace</option>
-                    <option value="fintech">Fintech</option>
-                    <option value="autre">Autre</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-white/80 text-sm font-medium mb-2">Ville</label>
-                  <input
-                    type="text"
-                    value={editForm.city || ''}
-                    onChange={(e) => setEditForm({...editForm, city: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white/80 text-sm font-medium mb-2">Adresse</label>
-                <input
-                  type="text"
-                  value={editForm.address || ''}
-                  onChange={(e) => setEditForm({...editForm, address: e.target.value})}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                />
-              </div>
-
-              <div className="grid md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-white/80 text-sm font-medium mb-2">Téléphone</label>
-                  <input
-                    type="tel"
-                    value={editForm.phone || ''}
-                    onChange={(e) => setEditForm({...editForm, phone: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                  />
-                </div>
-                <div>
-                  <label className="block text-white/80 text-sm font-medium mb-2">Site web</label>
-                  <input
-                    type="url"
-                    value={editForm.website || ''}
-                    onChange={(e) => setEditForm({...editForm, website: e.target.value})}
-                    className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-white/80 text-sm font-medium mb-2">Description</label>
-                <textarea
-                  value={editForm.description || ''}
-                  onChange={(e) => setEditForm({...editForm, description: e.target.value})}
-                  rows={4}
-                  className="w-full px-4 py-3 rounded-xl bg-white/10 border-2 border-white/20 text-white placeholder-white/40 focus:border-white/40 focus:ring-4 focus:ring-white/10 transition-all"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-3 mt-6">
-              <button
-                onClick={handleSaveEdit}
-                disabled={actionLoading}
-                className="flex-1 px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white rounded-xl font-semibold transition-colors"
-              >
-                {actionLoading ? 'Enregistrement...' : 'Enregistrer'}
-              </button>
-              <button
-                onClick={() => setShowEditModal(false)}
-                className="px-6 py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-semibold transition-colors"
-              >
-                Annuler
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

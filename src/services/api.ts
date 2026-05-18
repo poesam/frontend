@@ -77,13 +77,10 @@ export const companyService = {
   update: (id: number, data: any) =>
     api.put(`/companies/${id}`, data),
   
-  delete: (id: number) =>
-    api.delete(`/companies/${id}`),
-  
   recalculateScore: (id: number) =>
     api.post(`/companies/${id}/recalculate-score`),
   
-  // Actions de statut
+  // Actions de statut (admin uniquement)
   approve: (id: number) =>
     api.put(`/companies/${id}`, { verification_status: 'verifie' }),
   
