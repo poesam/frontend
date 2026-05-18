@@ -258,7 +258,7 @@ export default function DisputesPage() {
             <Filter className="w-5 h-5 text-slate-600" />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | 'ouvert' | 'en_cours' | 'resolu' | 'escalade')}
               className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
             >
               <option value="all">Tous les statuts</option>

@@ -148,7 +148,7 @@ export default function DisputesPage() {
 
           <select
             value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value as any)}
+            onChange={(e) => setFilterStatus(e.target.value as 'all' | 'ouvert' | 'en_cours' | 'resolu' | 'ferme' | 'escalade')}
             className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-primary-500 focus:ring-4 focus:ring-primary-100 transition-all"
           >
             <option value="all">Tous les statuts</option>
