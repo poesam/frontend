@@ -94,6 +94,7 @@ export interface Dispute {
   created_at: string;
   transaction?: Transaction;
   company?: Company;
+  reporter?: User;
 }
 
 export interface VerificationRequest {

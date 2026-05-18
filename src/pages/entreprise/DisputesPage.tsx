@@ -11,7 +11,7 @@ export default function DisputesPage() {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'ouvert' | 'en_cours' | 'resolu' | 'escalade'>('all');
   const [showModal, setShowModal] = useState(false);
   const [newDispute, setNewDispute] = useState({
     transaction_id: '',
@@ -134,12 +134,12 @@ export default function DisputesPage() {
 
   const getStatusBadge = (status: string) => {
     const badges = {
-      open: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Ouvert', icon: AlertCircle },
-      in_progress: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'En cours', icon: Clock },
-      resolved: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Résolu', icon: CheckCircle2 },
-      escalated: { bg: 'bg-red-100', text: 'text-red-700', label: 'Escaladé', icon: TrendingUp },
+      ouvert: { bg: 'bg-amber-100', text: 'text-amber-700', label: 'Ouvert', icon: AlertCircle },
+      en_cours: { bg: 'bg-blue-100', text: 'text-blue-700', label: 'En cours', icon: Clock },
+      resolu: { bg: 'bg-emerald-100', text: 'text-emerald-700', label: 'Résolu', icon: CheckCircle2 },
+      escalade: { bg: 'bg-red-100', text: 'text-red-700', label: 'Escaladé', icon: TrendingUp },
     };
-    const badge = badges[status as keyof typeof badges] || badges.open;
+    const badge = badges[status as keyof typeof badges] || badges.ouvert;
     const Icon = badge.icon;
     return (
       <span className={`inline-flex items-center space-x-1 px-3 py-1 rounded-full text-xs font-semibold ${badge.bg} ${badge.text}`}>
@@ -157,9 +157,9 @@ export default function DisputesPage() {
 
   const stats = {
     total: disputes.length,
-    open: disputes.filter(d => d.status === 'ouvert').length,
-    in_progress: disputes.filter(d => d.status === 'en_cours').length,
-    resolved: disputes.filter(d => d.status === 'resolu').length,
+    ouvert: disputes.filter(d => d.status === 'ouvert').length,
+    en_cours: disputes.filter(d => d.status === 'en_cours').length,
+    resolu: disputes.filter(d => d.status === 'resolu').length,
   };
 
   return (
@@ -209,7 +209,7 @@ export default function DisputesPage() {
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Ouverts</p>
-            <p className="text-3xl font-bold text-slate-900">{stats.open}</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.ouvert}</p>
           </div>
         </div>
 
@@ -221,7 +221,7 @@ export default function DisputesPage() {
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">En cours</p>
-            <p className="text-3xl font-bold text-slate-900">{stats.in_progress}</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.en_cours}</p>
           </div>
         </div>
 
@@ -233,7 +233,7 @@ export default function DisputesPage() {
           </div>
           <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-600 uppercase tracking-wide">Résolus</p>
-            <p className="text-3xl font-bold text-slate-900">{stats.resolved}</p>
+            <p className="text-3xl font-bold text-slate-900">{stats.resolu}</p>
           </div>
         </div>
       </div>
@@ -262,10 +262,10 @@ export default function DisputesPage() {
               className="px-4 py-3 rounded-xl border-2 border-slate-200 focus:border-blue-500 focus:ring-4 focus:ring-blue-100 transition-all"
             >
               <option value="all">Tous les statuts</option>
-              <option value="open">Ouverts</option>
-              <option value="in_progress">En cours</option>
-              <option value="resolved">Résolus</option>
-              <option value="escalated">Escaladés</option>
+              <option value="ouvert">Ouverts</option>
+              <option value="en_cours">En cours</option>
+              <option value="resolu">Résolus</option>
+              <option value="escalade">Escaladés</option>
             </select>
           </div>
 
